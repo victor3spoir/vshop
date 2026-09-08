@@ -1,0 +1,49 @@
+{
+  "run_id": "20260908-vshop-features",
+  "task": "Create feature folders with CRUD routes and ecommerce usecases (categories, products, orders) and wire them into FastAPI app",
+  "baseline": {
+    "branch": "dev",
+    "revision": "e1ebfcd18a7178af2a5ce83f0951d806ed65e746",
+    "dirty": false
+  },
+  "risk": "medium",
+  "note": "apex-state.py unavailable on Windows (fcntl); manual minimal record",
+  "contract": {
+    "objective": "Feature-based folders under src/features for categories, products, orders; CRUD + ecommerce usecases (checkout with stock + price snapshot); wired into app.py",
+    "non_goals": [
+      "auth",
+      "payments integration",
+      "migrations changes",
+      "frontend"
+    ],
+    "acceptance": [
+      "app imports cleanly",
+      "routers registered under /api",
+      "CRUD endpoints for category/product/order",
+      "order creation validates stock and snapshots price",
+      "ruff passes"
+    ],
+    "scope": [
+      "src/features/**",
+      "src/app.py"
+    ]
+  },
+  "events": [
+    {
+      "phase": "preflight",
+      "status": "complete",
+      "ts": "2026-09-08T11:43:13.484Z"
+    },
+    {
+      "phase": "verify",
+      "status": "complete",
+      "ts": "2026-09-08T11:48:56.454Z",
+      "evidence": "runtime proof: full CRUD + checkout/cancel/price-history flow verified against live server on :8123"
+    },
+    {
+      "phase": "handoff",
+      "status": "complete",
+      "ts": "2026-09-08T11:48:56.455Z"
+    }
+  ]
+}

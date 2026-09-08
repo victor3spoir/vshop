@@ -1,0 +1,33 @@
+[project]
+name = "vshop"
+version = "0.1.0"
+description = "Simple e-commerce REST API built with FastAPI and Piccolo ORM"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.14"
+dependencies = [
+    "boto3>=1.43.89",
+    "fastapi[standard]>=0.141.1",
+    "piccolo-admin>=1.14.0",
+    "piccolo[all]>=1.36.0",
+    "pydantic-settings>=2.15.0",
+]
+
+[dependency-groups]
+dev = [
+    "faker>=40.38.0",
+    "httpx>=0.28.1",
+    "pillow>=12.3.0",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.16.6",
+    "testcontainers[postgres]>=4.15.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+asyncio_mode = "auto"
+markers = [
+    "integration: tests that require Docker (testcontainers)",
+]

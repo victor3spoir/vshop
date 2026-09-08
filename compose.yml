@@ -2,6 +2,8 @@ name: vshop
 services:
   db:
     image: postgres:18-alpine
+    expose:
+      - 5432
     ports:
       - 35432:5432
     environment:
@@ -9,6 +11,45 @@ services:
     volumes:
       - vshop-db-vol:/var/lib/postgres
 
+  rustfs:
+    image: rustfs/rustfs:latest
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    expose:
+      - 9000 #api
+      - 9001 #console
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >
+          curl --fail --silent http://127.0.0.1:9000/health/ready && curl --fail --silent http://127.0.0.1:9001/rustfs/console/health
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - 9000:9000
+      - 9001:9001
+    environment:
+      RUSTFS_OBS_LOGGER_LEVEL: warn
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_CONSOLE_ADDRESS: ":9001"
+      RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY}
+      RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY}
+      RUSTFS_REGION: us-east-1
+      RUSTFS_HEALTH_ENDPOINT_ENABLE: "true"
+    volumes:
+      - vshop-rustfs-vol:/data
+
 volumes:
   vshop-db-vol:
     name: vshop-db-vol
+  vshop-rustfs-vol:
+    name: vshop-rustfs-vol
