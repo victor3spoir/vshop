@@ -55,6 +55,9 @@ class Order(Table):
     # Optional: If you want an updated_at column that changes every save, use auto_update
     # updated_at = Timestamp(null=True, auto_update=datetime.datetime.now)
 
+    # better-auth user id (frontend.user table lives in another schema, so a
+    # plain indexed varchar instead of a cross-schema FK).
+    user_id = Varchar(length=64, index=True)
     status = Varchar(length=50, default="pending")
     total_amount = Numeric(digits=(10, 2), default=decimal.Decimal("0.0"))
     # Timestamps
@@ -75,6 +78,18 @@ class OrderItem(Table):
     # Timestamps
     created_at = Timestamp(default=TimestampNow())
     # 2. auto_update executes the function every time the row is saved
+    updated_at = Timestamp(default=TimestampNow(), auto_update=datetime.datetime.now)
+
+
+class CartItem(Table):
+    """Server-side cart: one row per (user, product)."""
+
+    id = UUID(primary_key=True)
+    user_id = Varchar(length=64, index=True)
+    product = ForeignKey(references=Product)
+    quantity = Integer(default=1)
+    # Timestamps
+    created_at = Timestamp(default=TimestampNow())
     updated_at = Timestamp(default=TimestampNow(), auto_update=datetime.datetime.now)
 
 

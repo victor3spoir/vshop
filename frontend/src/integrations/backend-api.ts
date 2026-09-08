@@ -9,7 +9,59 @@ const baseUrl =
 		? (process.env.SERVER_API_URL ?? "http://localhost:8000/api")
 		: (import.meta.env.VITE_API_URL ?? "/backend/api");
 
-export const backendApi = up(fetch, () => ({ baseUrl }));
+// --- better-auth JWT -------------------------------------------------------
+// The backend verifies bearer tokens against the frontend's JWKS. On the
+// client the token is cached until shortly before exp; on the server it is
+// resolved per request from the session cookies (never cached - the process
+// serves many users).
+let clientToken: { value: string; exp: number } | null = null;
+
+function jwtExp(token: string): number {
+	try {
+		const claims = JSON.parse(atob(token.split(".")[1] ?? ""));
+		return typeof claims.exp === "number" ? claims.exp * 1000 : 0;
+	} catch {
+		return 0;
+	}
+}
+
+async function getJwt(): Promise<string | null> {
+	if (typeof window === "undefined") {
+		// Dynamic imports keep server-only modules out of the client bundle.
+		const [{ auth }, { getRequestHeaders }] = await Promise.all([
+			import("#/lib/auth"),
+			import("@tanstack/react-start/server"),
+		]);
+		const result = await auth.api
+			.getToken({ headers: getRequestHeaders() })
+			.catch(() => null);
+		return result?.token ?? null;
+	}
+	if (clientToken && Date.now() < clientToken.exp - 30_000) {
+		return clientToken.value;
+	}
+	const response = await fetch("/api/auth/token");
+	if (!response.ok) return null; // anonymous - public endpoints still work
+	const { token } = (await response.json()) as { token?: string };
+	if (!token) return null;
+	clientToken = { value: token, exp: jwtExp(token) };
+	return token;
+}
+
+export function dropCachedJwt() {
+	clientToken = null;
+}
+
+const authFetch: typeof fetch = async (input, init) => {
+	const token = await getJwt();
+	const headers = new Headers(init?.headers);
+	if (token && !headers.has("authorization")) {
+		headers.set("authorization", `Bearer ${token}`);
+	}
+	return fetch(input, { ...init, headers });
+};
+
+export const backendApi = up(authFetch, () => ({ baseUrl }));
 
 // Product images are proxied by the frontend server route /api/media?key=...
 // (src/routes/api/media.ts), so the browser never calls the backend origin.

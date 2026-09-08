@@ -8,9 +8,11 @@ requires-python = ">=3.14"
 dependencies = [
     "boto3>=1.43.89",
     "fastapi[standard]>=0.141.1",
+    "httpx>=0.28",
     "piccolo-admin>=1.14.0",
     "piccolo[all]>=1.36.0",
     "pydantic-settings>=2.15.0",
+    "pyjwt[crypto]>=2.10",
 ]
 
 [dependency-groups]

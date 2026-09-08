@@ -138,7 +138,9 @@ async def seed_products(count: int, categories: list[Category]) -> None:
         if random.random() < 0.3:
             await ProductPrice(
                 product=product.id,
-                price=(price * decimal.Decimal("0.8")).quantize(decimal.Decimal("0.01")),
+                price=(price * decimal.Decimal("0.8")).quantize(
+                    decimal.Decimal("0.01")
+                ),
                 price_type="discount",
                 valid_to=None,
             ).save()

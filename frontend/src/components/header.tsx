@@ -1,18 +1,26 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link, useRouteContext, useRouter } from "@tanstack/react-router";
 import { LogOut, ShoppingCart, Store, User } from "lucide-react";
 import { Button } from "#/components/ui/button";
-import { cartCount, useCart } from "#/features/cart/cart.store";
+import { cartQueryOptions } from "#/features/cart/cart.queries";
+import { cartCount } from "#/features/cart/cart.types";
+import { dropCachedJwt } from "#/integrations/backend-api";
 import { signOut } from "#/lib/auth-client";
 
 export function Header() {
 	// Session comes from the root route's beforeLoad via router context.
 	const { session } = useRouteContext({ from: "__root__" });
 	const router = useRouter();
-	const items = useCart();
-	const count = cartCount(items);
+	// Server-side cart; anonymous visitors have none.
+	const { data: cart } = useQuery({
+		...cartQueryOptions(),
+		enabled: !!session,
+	});
+	const count = cart ? cartCount(cart) : 0;
 
 	const handleSignOut = async () => {
 		await signOut();
+		dropCachedJwt();
 		await router.invalidate();
 	};
 

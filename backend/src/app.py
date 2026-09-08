@@ -5,6 +5,7 @@ from fastapi.responses import RedirectResponse
 from fastapi.routing import Mount
 from piccolo.engine import engine_finder
 
+from features.cart.route import cart_router
 from features.categories.route import category_router
 from features.orders.route import order_router
 from features.products.route import product_router
@@ -41,6 +42,7 @@ app = FastAPI(
 app.include_router(category_router, prefix="/api")
 app.include_router(product_router, prefix="/api")
 app.include_router(order_router, prefix="/api")
+app.include_router(cart_router, prefix="/api")
 
 
 @app.get("/static/{file_key:path}", include_in_schema=False)

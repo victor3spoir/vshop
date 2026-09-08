@@ -40,4 +40,3 @@ _OrderOut = create_pydantic_model(
 
 class OrderOut(_OrderOut):
     items: list[OrderItemOut] = Field(default_factory=list)
-from pydantic import BaseModel, Field

@@ -1,18 +1,20 @@
+import decimal
+
 from piccolo.apps.migrations.auto.migration_manager import MigrationManager
-from piccolo.columns.base import OnDelete
-from piccolo.columns.base import OnUpdate
-from piccolo.columns.column_types import ForeignKey
-from piccolo.columns.column_types import Integer
-from piccolo.columns.column_types import Numeric
-from piccolo.columns.column_types import Text
-from piccolo.columns.column_types import Timestamp
-from piccolo.columns.column_types import UUID
-from piccolo.columns.column_types import Varchar
+from piccolo.columns.base import OnDelete, OnUpdate
+from piccolo.columns.column_types import (
+    UUID,
+    ForeignKey,
+    Integer,
+    Numeric,
+    Text,
+    Timestamp,
+    Varchar,
+)
 from piccolo.columns.defaults.timestamp import TimestampNow
 from piccolo.columns.defaults.uuid import UUID4
 from piccolo.columns.indexes import IndexMethod
 from piccolo.table import Table
-import decimal
 
 
 class Category(Table, tablename="category", schema=None):
@@ -78,9 +80,7 @@ async def forwards():
         class_name="Category", tablename="category", schema=None, columns=None
     )
 
-    manager.add_table(
-        class_name="Order", tablename="order", schema=None, columns=None
-    )
+    manager.add_table(class_name="Order", tablename="order", schema=None, columns=None)
 
     manager.add_table(
         class_name="Product", tablename="product", schema=None, columns=None
@@ -143,7 +143,7 @@ async def forwards():
         column_class_name="Numeric",
         column_class=Numeric,
         params={
-            "default": decimal.Decimal("0"),
+            "default": decimal.Decimal(0),
             "digits": (10, 2),
             "null": False,
             "primary_key": False,
@@ -726,7 +726,7 @@ async def forwards():
         column_class_name="Numeric",
         column_class=Numeric,
         params={
-            "default": decimal.Decimal("0"),
+            "default": decimal.Decimal(0),
             "digits": (10, 2),
             "null": False,
             "primary_key": False,

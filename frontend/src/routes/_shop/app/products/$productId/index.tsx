@@ -1,9 +1,16 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import {
+	createFileRoute,
+	Link,
+	notFound,
+	useNavigate,
+} from "@tanstack/react-router";
 import { ArrowLeft, Check, PackageOpen, ShoppingCart } from "lucide-react";
-import { useState } from "react";
 import { Button } from "#/components/ui/button";
-import { cart } from "#/features/cart/cart.store";
+import {
+	cartQueryOptions,
+	useSetCartItemMutation,
+} from "#/features/cart/cart.queries";
 import { getProductQueryOptions } from "#/features/catalog/catalog.queries";
 import { formatPrice } from "#/features/catalog/catalog.types";
 import { backendMediaUrl } from "#/integrations/backend-api";
@@ -39,17 +46,27 @@ function ProductNotFoundPage() {
 function ProductDetailPage() {
 	const { productId } = Route.useParams();
 	const { data: product } = useSuspenseQuery(getProductQueryOptions(productId));
-	// Ephemeral UI feedback only - allowed useState.
-	const [added, setAdded] = useState(false);
+	const { session } = Route.useRouteContext();
+	const navigate = useNavigate();
+	const setItem = useSetCartItemMutation();
+	// Derived from the cart query cache - no local state needed. Anonymous
+	// visitors have no cart, so the query is disabled and reads as empty.
+	const { data: cart } = useQuery({
+		...cartQueryOptions(),
+		enabled: !!session,
+	});
+	const inCart =
+		cart?.items.find((i) => i.product_id === product.id)?.quantity ?? 0;
 
 	const addToCart = () => {
-		cart.add({
-			productId: product.id,
-			name: product.name,
-			price: product.current_price,
-		});
-		setAdded(true);
-		setTimeout(() => setAdded(false), 1500);
+		if (!session) {
+			navigate({
+				to: "/sign-in",
+				search: { redirect: `/app/products/${product.id}` },
+			});
+			return;
+		}
+		setItem.mutate({ product_id: product.id, quantity: inCart + 1 });
 	};
 
 	return (
@@ -90,16 +107,24 @@ function ProductDetailPage() {
 					) : null}
 					<Button
 						onClick={addToCart}
-						disabled={product.stock <= 0 || !product.current_price}
+						disabled={
+							product.stock <= 0 ||
+							!product.current_price ||
+							setItem.isPending ||
+							inCart >= product.stock
+						}
 						className="w-full md:w-auto"
 					>
-						{added ? (
+						{inCart > 0 ? (
 							<Check className="size-4" />
 						) : (
 							<ShoppingCart className="size-4" />
 						)}
-						{added ? "Added" : "Add to cart"}
+						{inCart > 0 ? `In cart (${inCart})` : "Add to cart"}
 					</Button>
+					{setItem.error ? (
+						<p className="text-sm text-destructive">{setItem.error.message}</p>
+					) : null}
 				</div>
 			</div>
 		</div>

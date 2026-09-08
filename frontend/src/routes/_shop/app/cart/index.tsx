@@ -1,45 +1,46 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import {
+	createFileRoute,
+	Link,
+	redirect,
+	useNavigate,
+} from "@tanstack/react-router";
 import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { Button } from "#/components/ui/button";
-import { cart, cartTotal, useCart } from "#/features/cart/cart.store";
+import {
+	cartQueryOptions,
+	useCheckoutMutation,
+	useSetCartItemMutation,
+} from "#/features/cart/cart.queries";
 import { formatPrice } from "#/features/catalog/catalog.types";
-import { useCreateOrderMutation } from "#/features/orders/orders.queries";
+import { backendMediaUrl } from "#/integrations/backend-api";
 
+// The cart lives server-side, scoped to the authenticated user.
 export const Route = createFileRoute("/_shop/app/cart/")({
+	beforeLoad: ({ context }) => {
+		if (!context.session) {
+			throw redirect({ to: "/sign-in", search: { redirect: "/app/cart" } });
+		}
+	},
+	loader: ({ context }) =>
+		context.queryClient.ensureQueryData(cartQueryOptions()),
 	component: CartPage,
 });
 
 function CartPage() {
-	const items = useCart();
-	const { session } = Route.useRouteContext();
+	const { data: cart } = useSuspenseQuery(cartQueryOptions());
 	const navigate = useNavigate();
-	const createOrder = useCreateOrderMutation();
+	const setItem = useSetCartItemMutation();
+	const checkoutMutation = useCheckoutMutation();
 
 	const checkout = () => {
-		if (!session) {
-			navigate({ to: "/sign-in", search: { redirect: "/app/cart" } });
-			return;
-		}
-		createOrder.mutate(
-			{
-				items: items.map((i) => ({
-					product_id: i.productId,
-					quantity: i.quantity,
-				})),
-			},
-			{
-				onSuccess: (order) => {
-					cart.clear();
-					navigate({
-						to: "/app/orders/$orderId",
-						params: { orderId: order.id },
-					});
-				},
-			},
-		);
+		checkoutMutation.mutate(undefined, {
+			onSuccess: (order) =>
+				navigate({ to: "/app/orders/$orderId", params: { orderId: order.id } }),
+		});
 	};
 
-	if (items.length === 0) {
+	if (cart.items.length === 0) {
 		return (
 			<div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
 				<ShoppingCart className="size-8" />
@@ -55,18 +56,29 @@ function CartPage() {
 		<div className="mx-auto max-w-2xl space-y-6">
 			<h1 className="text-xl font-semibold">Cart</h1>
 			<ul className="divide-y rounded-lg border">
-				{items.map((i) => (
-					<li key={i.productId} className="flex items-center gap-3 p-4">
+				{cart.items.map((i) => (
+					<li key={i.product_id} className="flex items-center gap-3 p-4">
+						<div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
+							{i.image ? (
+								<img
+									src={backendMediaUrl(i.image)}
+									alt={i.name}
+									className="size-full object-cover"
+								/>
+							) : (
+								<ShoppingCart className="size-4 text-muted-foreground" />
+							)}
+						</div>
 						<div className="min-w-0 flex-1">
 							<Link
 								to="/app/products/$productId"
-								params={{ productId: i.productId }}
+								params={{ productId: i.product_id }}
 								className="truncate text-sm font-medium hover:underline"
 							>
 								{i.name}
 							</Link>
 							<p className="text-xs text-muted-foreground">
-								{formatPrice(i.price)} each
+								{formatPrice(i.unit_price)} each
 							</p>
 						</div>
 						<div className="flex items-center gap-1">
@@ -75,7 +87,13 @@ function CartPage() {
 								size="icon"
 								className="size-7"
 								aria-label="Decrease quantity"
-								onClick={() => cart.setQuantity(i.productId, i.quantity - 1)}
+								disabled={setItem.isPending}
+								onClick={() =>
+									setItem.mutate({
+										product_id: i.product_id,
+										quantity: i.quantity - 1,
+									})
+								}
 							>
 								<Minus className="size-3.5" />
 							</Button>
@@ -87,14 +105,22 @@ function CartPage() {
 								size="icon"
 								className="size-7"
 								aria-label="Increase quantity"
-								onClick={() => cart.setQuantity(i.productId, i.quantity + 1)}
+								disabled={setItem.isPending || i.quantity >= i.stock}
+								onClick={() =>
+									setItem.mutate({
+										product_id: i.product_id,
+										quantity: i.quantity + 1,
+									})
+								}
 							>
 								<Plus className="size-3.5" />
 							</Button>
 						</div>
 						<span className="w-20 text-right text-sm font-medium tabular-nums">
 							{formatPrice(
-								i.price ? Number.parseFloat(i.price) * i.quantity : null,
+								i.unit_price
+									? Number.parseFloat(i.unit_price) * i.quantity
+									: null,
 							)}
 						</span>
 						<Button
@@ -102,7 +128,10 @@ function CartPage() {
 							size="icon"
 							className="size-7"
 							aria-label="Remove item"
-							onClick={() => cart.remove(i.productId)}
+							disabled={setItem.isPending}
+							onClick={() =>
+								setItem.mutate({ product_id: i.product_id, quantity: 0 })
+							}
 						>
 							<Trash2 className="size-4" />
 						</Button>
@@ -112,22 +141,20 @@ function CartPage() {
 			<div className="flex items-center justify-between">
 				<span className="text-sm text-muted-foreground">Total</span>
 				<span className="text-lg font-semibold tabular-nums">
-					{formatPrice(cartTotal(items))}
+					{formatPrice(cart.total)}
 				</span>
 			</div>
-			{createOrder.error ? (
-				<p className="text-sm text-destructive">{createOrder.error.message}</p>
+			{setItem.error || checkoutMutation.error ? (
+				<p className="text-sm text-destructive">
+					{setItem.error?.message ?? checkoutMutation.error?.message}
+				</p>
 			) : null}
 			<Button
 				className="w-full"
 				onClick={checkout}
-				disabled={createOrder.isPending}
+				disabled={checkoutMutation.isPending}
 			>
-				{createOrder.isPending
-					? "Placing order..."
-					: session
-						? "Place order"
-						: "Sign in to checkout"}
+				{checkoutMutation.isPending ? "Placing order..." : "Place order"}
 			</Button>
 		</div>
 	);

@@ -3,11 +3,7 @@ import {
 	useMutation,
 	useQueryClient,
 } from "@tanstack/react-query";
-import {
-	type Order,
-	type OrderCreate,
-	orderCreateSchema,
-} from "#/features/orders/orders.types";
+import type { Order } from "#/features/orders/orders.types";
 import { backendApi } from "#/integrations/backend-api";
 
 export const listOrdersQueryOptions = () =>
@@ -24,18 +20,6 @@ export const getOrderQueryOptions = (orderId: string) =>
 			backendApi<Order>(`/orders/${orderId}`, { signal }),
 		staleTime: 10_000,
 	});
-
-export function useCreateOrderMutation() {
-	const queryClient = useQueryClient();
-	return useMutation({
-		mutationFn: (input: OrderCreate) =>
-			backendApi<Order>("/orders/", {
-				method: "POST",
-				body: orderCreateSchema.parse(input),
-			}),
-		onSuccess: () => queryClient.invalidateQueries({ queryKey: ["orders"] }),
-	});
-}
 
 export function useCancelOrderMutation(orderId: string) {
 	const queryClient = useQueryClient();

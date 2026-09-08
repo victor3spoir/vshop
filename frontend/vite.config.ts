@@ -16,15 +16,25 @@ function mediaProxyDevPlugin(): Plugin {
 		apply: "serve",
 		configureServer(server) {
 			server.middlewares.use("/api/media", (req, res) => {
-				serveMedia(
-					new Request(`http://localhost${req.originalUrl ?? req.url ?? ""}`),
-				).then(async (response) => {
+				// Fully handled promise chain: an unhandled rejection here (e.g.
+				// backend down) would crash the Vite dev worker and surface as
+				// 'Vite environment "ssr" is unavailable' on every request.
+				(async () => {
+					const response = await serveMedia(
+						new Request(`http://localhost${req.originalUrl ?? req.url ?? ""}`),
+					);
 					res.statusCode = response.status;
 					response.headers.forEach((value, name) => {
 						res.setHeader(name, value);
 					});
 					const body = await response.arrayBuffer();
 					res.end(Buffer.from(body));
+				})().catch(() => {
+					if (!res.headersSent) {
+						res.statusCode = 502;
+						res.setHeader("content-type", "text/plain");
+					}
+					res.end("Media upstream unavailable");
 				});
 			});
 		},

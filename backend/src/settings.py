@@ -55,6 +55,12 @@ class Settings(BaseSettings):
     s3_secret_key: SecretStr = SecretStr("admin")
     s3_media_bucket: str = "vshop-media"
 
+    # Auth: JWTs are issued by the better-auth frontend (jwt plugin) and
+    # verified here against its public JWKS endpoint.
+    auth_issuer: str = "http://localhost:3000"
+    auth_audience: str = "http://localhost:3000"
+    auth_jwks_url: str = "http://localhost:3000/api/auth/jwks"
+
     @property
     def is_production(self) -> bool:
         return self.python_env == Environment.PRODUCTION

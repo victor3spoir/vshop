@@ -43,22 +43,32 @@ async def _attach_items(order: dict) -> dict:
     return order
 
 
-async def list_orders(order_status: str | None = None) -> list[dict]:
+async def list_orders(
+    user_id: str | None = None,
+    order_status: str | None = None,
+) -> list[dict]:
+    """List orders; pass user_id to scope to one customer (None = all, admin)."""
     query = Order.select().order_by(Order.created_at, ascending=False)
+    if user_id:
+        query = query.where(Order.user_id == user_id)
     if order_status:
         query = query.where(Order.status == order_status)
     orders = await query
     return [await _attach_items(order) for order in orders]
 
 
-async def get_order(order_id: uuid.UUID) -> dict | None:
-    order = await Order.select().where(Order.id == order_id).first()
+async def get_order(order_id: uuid.UUID, user_id: str | None = None) -> dict | None:
+    """Get one order; pass user_id to enforce ownership (None = any, admin)."""
+    query = Order.select().where(Order.id == order_id)
+    if user_id:
+        query = query.where(Order.user_id == user_id)
+    order = await query.first()
     if not order:
         return None
     return await _attach_items(order)
 
 
-async def create_order(data: OrderCreate) -> dict:
+async def create_order(data: OrderCreate, user_id: str) -> dict:
     """Checkout: validate stock, snapshot prices, decrement stock atomically."""
     async with Order._meta.db.transaction():
         total = decimal.Decimal(0)
@@ -87,7 +97,7 @@ async def create_order(data: OrderCreate) -> dict:
                 )
             )
 
-        order = Order(status=OrderStatus.PENDING, total_amount=total)
+        order = Order(user_id=user_id, status=OrderStatus.PENDING, total_amount=total)
         await order.save()
         for order_item in items:
             order_item.order = order.id
@@ -96,13 +106,23 @@ async def create_order(data: OrderCreate) -> dict:
     return await get_order(order.id)
 
 
-async def update_status(order_id: uuid.UUID, new_status: OrderStatus) -> dict | None:
+async def update_status(
+    order_id: uuid.UUID,
+    new_status: OrderStatus,
+    user_id: str | None = None,
+) -> dict | None:
+    """Transition an order; pass user_id to enforce ownership (None = any, admin)."""
     async with Order._meta.db.transaction():
-        order = await Order.objects().get(Order.id == order_id)
+        query = Order.objects().where(Order.id == order_id)
+        if user_id:
+            query = query.where(Order.user_id == user_id)
+        order = await query.first()
         if not order:
             return None
         if new_status not in ALLOWED_TRANSITIONS.get(order.status, set()):
-            raise OrderError(f"cannot transition from '{order.status}' to '{new_status}'")
+            raise OrderError(
+                f"cannot transition from '{order.status}' to '{new_status}'"
+            )
         if new_status == OrderStatus.CANCELLED:
             await _restore_stock(order_id)
         order.status = new_status
@@ -113,6 +133,6 @@ async def update_status(order_id: uuid.UUID, new_status: OrderStatus) -> dict | 
 async def _restore_stock(order_id: uuid.UUID) -> None:
     items = await OrderItem.select().where(OrderItem.order == order_id)
     for item in items:
-        await Product.update(
-            {Product.stock: Product.stock + item["quantity"]}
-        ).where(Product.id == item["product"])
+        await Product.update({Product.stock: Product.stock + item["quantity"]}).where(
+            Product.id == item["product"]
+        )
