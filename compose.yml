@@ -1,0 +1,14 @@
+name: vshop
+services:
+  db:
+    image: postgres:18-alpine
+    ports:
+      - 35432:5432
+    environment:
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - vshop-db-vol:/var/lib/postgres
+
+volumes:
+  vshop-db-vol:
+    name: vshop-db-vol
