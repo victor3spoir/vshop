@@ -7,7 +7,7 @@ import { prisma } from '../src/lib/prisma'
 
 async function main() {
   console.log('Seeding admin user...')
-
+  void auth // seeding via better-auth to be implemented
 
 }
 

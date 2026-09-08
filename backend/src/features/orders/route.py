@@ -14,7 +14,7 @@ from .schemas import OrderCreate, OrderItemIn, OrderOut, OrderStatus
 order_router = APIRouter(prefix="/orders", tags=["orders"])
 
 
-def _scope(user) -> str | None:
+def _scope(user: CurrentUser) -> str | None:
     """Admins operate across all orders; customers only on their own."""
     return None if user.is_admin else user.id
 

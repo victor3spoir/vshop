@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useRouteContext, useRouter } from "@tanstack/react-router";
-import { LogOut, ShoppingCart, Store, User } from "lucide-react";
+import { LogOut, ShoppingCart, User } from "lucide-react";
 import { Button } from "#/components/ui/button";
 import { cartQueryOptions } from "#/features/cart/cart.queries";
 import { cartCount } from "#/features/cart/cart.types";
@@ -28,7 +28,7 @@ export function Header() {
 		<header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
 			<div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4">
 				<Link to="/" className="flex items-center gap-2 font-semibold">
-					<Store className="size-5" />
+					<img src="/brand/logo.svg" alt="vshop logo" className="size-6" />
 					vshop
 				</Link>
 				<nav className="flex items-center gap-1 text-sm">

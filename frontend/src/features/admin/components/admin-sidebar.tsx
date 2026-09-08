@@ -58,7 +58,7 @@ export function AdminSidebar({ user }: { user: SidebarUser }) {
 			.toUpperCase() || "?";
 
 	return (
-		<Sidebar>
+		<Sidebar collapsible="icon">
 			<SidebarHeader className="h-14 justify-center">
 				<div className="flex items-center gap-2 px-2">
 					<div className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">

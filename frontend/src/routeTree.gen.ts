@@ -17,6 +17,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as ApiMediaRouteImport } from './routes/api/media'
 import { Route as BackendSplatRouteImport } from './routes/backend.$'
 import { Route as AdminUsersIndexRouteImport } from './routes/admin/users/index'
+import { Route as AdminUsersUserIdRouteImport } from './routes/admin/users/$userId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ShopAuthSignInIndexRouteImport } from './routes/_shop/_auth/sign-in/index'
 import { Route as ShopAuthSignUpIndexRouteImport } from './routes/_shop/_auth/sign-up/index'
@@ -62,6 +63,11 @@ const BackendSplatRoute = BackendSplatRouteImport.update({
 const AdminUsersIndexRoute = AdminUsersIndexRouteImport.update({
   id: '/users/',
   path: '/users/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminUsersUserIdRoute = AdminUsersUserIdRouteImport.update({
+  id: '/users/$userId',
+  path: '/users/$userId',
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/api/media': typeof ApiMediaRoute
   '/backend/$': typeof BackendSplatRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/users/$userId': typeof AdminUsersUserIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/admin/users/': typeof AdminUsersIndexRoute
   '/sign-in/': typeof ShopAuthSignInIndexRoute
@@ -128,6 +135,7 @@ export interface FileRoutesByTo {
   '/api/media': typeof ApiMediaRoute
   '/backend/$': typeof BackendSplatRoute
   '/admin': typeof AdminIndexRoute
+  '/admin/users/$userId': typeof AdminUsersUserIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/admin/users': typeof AdminUsersIndexRoute
   '/sign-in': typeof ShopAuthSignInIndexRoute
@@ -147,6 +155,7 @@ export interface FileRoutesById {
   '/backend/$': typeof BackendSplatRoute
   '/_shop/': typeof ShopIndexRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/users/$userId': typeof AdminUsersUserIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/admin/users/': typeof AdminUsersIndexRoute
   '/_shop/_auth/sign-in/': typeof ShopAuthSignInIndexRoute
@@ -165,6 +174,7 @@ export interface FileRouteTypes {
     | '/api/media'
     | '/backend/$'
     | '/admin/'
+    | '/admin/users/$userId'
     | '/api/auth/$'
     | '/admin/users/'
     | '/sign-in/'
@@ -180,6 +190,7 @@ export interface FileRouteTypes {
     | '/api/media'
     | '/backend/$'
     | '/admin'
+    | '/admin/users/$userId'
     | '/api/auth/$'
     | '/admin/users'
     | '/sign-in'
@@ -198,6 +209,7 @@ export interface FileRouteTypes {
     | '/backend/$'
     | '/_shop/'
     | '/admin/'
+    | '/admin/users/$userId'
     | '/api/auth/$'
     | '/admin/users/'
     | '/_shop/_auth/sign-in/'
@@ -273,6 +285,13 @@ declare module '@tanstack/react-router' {
       path: '/users'
       fullPath: '/admin/users/'
       preLoaderRoute: typeof AdminUsersIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/users/$userId': {
+      id: '/admin/users/$userId'
+      path: '/users/$userId'
+      fullPath: '/admin/users/$userId'
+      preLoaderRoute: typeof AdminUsersUserIdRouteImport
       parentRoute: typeof AdminRouteRoute
     }
     '/api/auth/$': {
@@ -374,11 +393,13 @@ const ShopRouteRouteWithChildren = ShopRouteRoute._addFileChildren(
 
 interface AdminRouteRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminUsersUserIdRoute: typeof AdminUsersUserIdRoute
   AdminUsersIndexRoute: typeof AdminUsersIndexRoute
 }
 
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
+  AdminUsersUserIdRoute: AdminUsersUserIdRoute,
   AdminUsersIndexRoute: AdminUsersIndexRoute,
 }
 

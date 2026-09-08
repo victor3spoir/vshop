@@ -1,21 +1,35 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { ClientOnly, createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Package, ShieldCheck, Users } from "lucide-react";
+import { z } from "zod";
 import { Button } from "#/components/ui/button";
-import { listUsersQueryOptions } from "#/features/admin/admin.queries";
+import { Skeleton } from "#/components/ui/skeleton";
+import { authStatsPeriodSchema } from "#/features/admin/admin.functions";
+import {
+	authStatsQueryOptions,
+	listUsersQueryOptions,
+} from "#/features/admin/admin.queries";
+import { AuthActivityChart } from "#/features/admin/components/auth-activity-chart";
 import { listOrdersQueryOptions } from "#/features/orders/orders.queries";
 
 // The admin layout route guards access; this page only loads its data.
 export const Route = createFileRoute("/admin/")({
-	loader: ({ context }) =>
+	validateSearch: z.object({
+		period: authStatsPeriodSchema.default(30),
+	}),
+	loaderDeps: ({ search }) => ({ period: search.period }),
+	loader: ({ context, deps }) =>
 		Promise.all([
 			context.queryClient.ensureQueryData(listUsersQueryOptions()),
 			context.queryClient.ensureQueryData(listOrdersQueryOptions()),
+			context.queryClient.ensureQueryData(authStatsQueryOptions(deps.period)),
 		]),
 	component: AdminOverviewPage,
 });
 
 function AdminOverviewPage() {
+	const { period } = Route.useSearch();
+	const navigate = Route.useNavigate();
 	const { data: users } = useSuspenseQuery(listUsersQueryOptions());
 	const { data: orders } = useSuspenseQuery(listOrdersQueryOptions());
 
@@ -44,6 +58,17 @@ function AdminOverviewPage() {
 					</div>
 				))}
 			</dl>
+			<ClientOnly fallback={<Skeleton className="h-80 w-full rounded-lg" />}>
+				<AuthActivityChart
+					period={period}
+					onPeriodChange={(next) =>
+						navigate({
+							search: (prev) => ({ ...prev, period: next }),
+							replace: true,
+						})
+					}
+				/>
+			</ClientOnly>
 			<Button asChild variant="outline" size="sm">
 				<Link to="/admin/users">
 					Manage users
