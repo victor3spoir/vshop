@@ -1,17 +1,20 @@
 [project]
 name = "vshop"
 version = "0.1.0"
-description = "Add your description here"
+description = "Simple e-commerce REST API built with FastAPI and Piccolo ORM"
 readme = "README.md"
+license = { file = "LICENSE" }
 requires-python = ">=3.14"
 dependencies = [
     "fastapi[standard]>=0.141.1",
     "piccolo-admin>=1.14.0",
     "piccolo[all]>=1.36.0",
+    "pydantic-settings>=2.15.0",
 ]
 
 [dependency-groups]
 dev = [
+    "faker>=40.38.0",
     "pytest>=9.1.1",
     "ruff>=0.16.6",
 ]
