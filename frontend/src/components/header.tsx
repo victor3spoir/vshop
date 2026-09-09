@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useRouteContext, useRouter } from "@tanstack/react-router";
-import { LogOut, ShoppingCart, User } from "lucide-react";
+import { LogOut, ShoppingBag, User } from "lucide-react";
 import { Button } from "#/components/ui/button";
 import { cartQueryOptions } from "#/features/cart/cart.queries";
 import { cartCount } from "#/features/cart/cart.types";
@@ -25,13 +25,16 @@ export function Header() {
 	};
 
 	return (
-		<header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
-			<div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4">
-				<Link to="/" className="flex items-center gap-2 font-semibold">
-					<img src="/brand/logo.svg" alt="vshop logo" className="size-6" />
+		<header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur-md">
+			<div className="mx-auto flex h-16 max-w-6xl items-center gap-5 px-4">
+				<Link
+					to="/"
+					className="flex shrink-0 items-center gap-2 text-base font-bold"
+				>
+					<img src="/brand/logo-v2.svg" alt="" className="size-7" />
 					vshop
 				</Link>
-				<nav className="flex items-center gap-1 text-sm">
+				<nav className="hidden items-center gap-1 text-sm sm:flex">
 					<Link
 						to="/"
 						className="rounded-md px-3 py-1.5 text-muted-foreground hover:text-foreground [&.active]:text-foreground [&.active]:font-medium"
@@ -56,12 +59,14 @@ export function Header() {
 					) : null}
 				</nav>
 				<div className="ml-auto flex items-center gap-2">
-					<Button asChild variant="ghost" size="icon" aria-label="Cart">
+					<Button asChild variant="default" size="sm">
 						<Link to="/app/cart" className="relative">
-							<ShoppingCart className="size-5" />
+							<ShoppingBag className="size-4" />
+							<span className="hidden sm:inline">Cart</span>
 							{count > 0 ? (
-								<span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-									{count > 9 ? "9+" : count}
+								<span>
+									<span className="sr-only">{count} items in cart</span>
+									<span aria-hidden="true">({count > 99 ? "99+" : count})</span>
 								</span>
 							) : null}
 						</Link>

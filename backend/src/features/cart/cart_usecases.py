@@ -3,6 +3,7 @@
 import decimal
 import uuid
 
+from features.inventory import inventory_service
 from features.orders.orders_usecases import _current_price
 from vshop.tables import CartItem, Product
 
@@ -19,7 +20,6 @@ async def get_cart(user_id: str) -> dict:
             CartItem.product.id.as_alias("product_id"),
             CartItem.product.name.as_alias("name"),
             CartItem.product.image.as_alias("image"),
-            CartItem.product.stock.as_alias("stock"),
         )
         .where(CartItem.user_id == user_id)
         .order_by(CartItem.created_at)
@@ -29,7 +29,8 @@ async def get_cart(user_id: str) -> dict:
     total = decimal.Decimal(0)
     for row in rows:
         price = await _current_price(row["product_id"])
-        items.append({**row, "unit_price": price})
+        stock = await inventory_service.get_availability(row["product_id"])
+        items.append({**row, "stock": stock, "unit_price": price})
         if price is not None:
             total += price * row["quantity"]
     return {"items": items, "total": total}
@@ -40,10 +41,11 @@ async def set_item(user_id: str, product_id: uuid.UUID, quantity: int) -> dict:
     product = await Product.objects().get(Product.id == product_id)
     if not product:
         raise CartError("product not found")
-    if quantity > product.stock:
+    stock = await inventory_service.get_availability(product_id)
+    if quantity > stock:
         raise CartError(
             f"insufficient stock for '{product.name}': "
-            f"{product.stock} available, {quantity} requested"
+            f"{stock} available, {quantity} requested"
         )
 
     existing = (

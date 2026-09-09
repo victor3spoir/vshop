@@ -10,7 +10,7 @@ import {
 	listUsersQueryOptions,
 } from "#/features/admin/admin.queries";
 import { AuthActivityChart } from "#/features/admin/components/auth-activity-chart";
-import { listOrdersQueryOptions } from "#/features/orders/orders.queries";
+import { pendingOrdersCountQueryOptions } from "#/features/orders/orders.queries";
 
 // The admin layout route guards access; this page only loads its data.
 export const Route = createFileRoute("/admin/")({
@@ -21,7 +21,7 @@ export const Route = createFileRoute("/admin/")({
 	loader: ({ context, deps }) =>
 		Promise.all([
 			context.queryClient.ensureQueryData(listUsersQueryOptions()),
-			context.queryClient.ensureQueryData(listOrdersQueryOptions()),
+			context.queryClient.ensureQueryData(pendingOrdersCountQueryOptions()),
 			context.queryClient.ensureQueryData(authStatsQueryOptions(deps.period)),
 		]),
 	component: AdminOverviewPage,
@@ -31,10 +31,9 @@ function AdminOverviewPage() {
 	const { period } = Route.useSearch();
 	const navigate = Route.useNavigate();
 	const { data: users } = useSuspenseQuery(listUsersQueryOptions());
-	const { data: orders } = useSuspenseQuery(listOrdersQueryOptions());
+	const { data: pending } = useSuspenseQuery(pendingOrdersCountQueryOptions());
 
 	const admins = users.filter((u) => u.role === "admin").length;
-	const pending = orders.filter((o) => o.status === "pending").length;
 
 	const stats = [
 		{ label: "Users", value: users.length, icon: Users },

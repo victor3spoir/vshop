@@ -7,15 +7,39 @@ is touched, then migrations run to build the schema.
 
 import asyncio
 import decimal
+import os
+
+os.environ.setdefault("REDIS_URL", "redis://:test@localhost:6379/0")
 
 import pytest
+from fakeredis.aioredis import FakeRedis
 from piccolo.engine.postgres import PostgresEngine
 from piccolo.table import Table
+from redis_fastapi import get_async_redis, get_rate_limit_backend
+from redis_fastapi.ratelimit_backend import RateLimitBackend
 from testcontainers.community.postgres import PostgresContainer
 
-from vshop.tables import Category, Order, OrderItem, Product, ProductPrice
+from vshop.tables import (
+    CartItem,
+    Category,
+    Inventory,
+    InventoryTransaction,
+    Order,
+    OrderItem,
+    Product,
+    ProductPrice,
+)
 
-TABLES: list[type[Table]] = [Category, Product, ProductPrice, Order, OrderItem]
+TABLES: list[type[Table]] = [
+    Category,
+    Product,
+    ProductPrice,
+    Order,
+    OrderItem,
+    CartItem,
+    Inventory,
+    InventoryTransaction,
+]
 
 
 @pytest.fixture(scope="session")
@@ -61,37 +85,82 @@ def clean_db(apply_schema, test_engine):
     asyncio.run(_truncate())
 
 
+_TEST_USER = {"id": "test-user", "email": "test@example.com"}
+
+
 @pytest.fixture
 async def client(clean_db, test_engine, monkeypatch):
     from httpx import ASGITransport, AsyncClient
 
     import app as app_module
+    from features.auth.deps import AuthUser, get_current_user
 
     # The app lifespan calls engine_finder() (piccolo_conf DB) to open a
     # pool against the dev database; bypass it and use the container engine.
     monkeypatch.setattr(app_module, "engine_finder", lambda: test_engine)
+
+    # Routes require a better-auth JWT; integration tests exercise the
+    # order/cart flows, not token verification, so inject a fake admin.
+    app_module.app.dependency_overrides[get_current_user] = lambda: AuthUser(
+        **_TEST_USER, role="admin"
+    )
+    redis = FakeRedis()
+    app_module.app.dependency_overrides[get_async_redis] = lambda: redis
+    app_module.app.dependency_overrides[get_rate_limit_backend] = lambda: (
+        RateLimitBackend(redis)
+    )
 
     async with AsyncClient(
         transport=ASGITransport(app=app_module.app), base_url="http://testserver"
     ) as http_client:
         yield http_client
 
+    app_module.app.dependency_overrides.clear()
+    await redis.aclose()
+
+
+@pytest.fixture
+def as_customer():
+    """Downgrade the authenticated test identity to a plain customer."""
+    import app as app_module
+    from features.auth.deps import AuthUser, get_current_user
+
+    app_module.app.dependency_overrides[get_current_user] = lambda: AuthUser(
+        **_TEST_USER, role="user"
+    )
+    yield
+    app_module.app.dependency_overrides.pop(get_current_user, None)
+
 
 @pytest.fixture
 async def catalog(clean_db):
     """A small known catalog: one category, two priced products."""
+    from features.inventory import inventory_service
+
     category = Category(name="Electronics", slug="electronics")
     await category.save()
 
-    laptop = Product(name="Laptop", description="A laptop", stock=10, category=category.id)
+    laptop = Product(name="Laptop", description="A laptop", category=category.id)
     await laptop.save()
-    await ProductPrice(product=laptop.id, price=decimal.Decimal("999.99"), valid_to=None).save()
+    await ProductPrice(
+        product=laptop.id, price=decimal.Decimal("999.99"), valid_to=None
+    ).save()
+    await inventory_service.receive_stock(laptop.id, 10, note="test stock")
 
-    mouse = Product(name="Mouse", description="A mouse", stock=3, category=category.id)
+    mouse = Product(name="Mouse", description="A mouse", category=category.id)
     await mouse.save()
-    await ProductPrice(product=mouse.id, price=decimal.Decimal("19.90"), valid_to=None).save()
+    await ProductPrice(
+        product=mouse.id, price=decimal.Decimal("19.90"), valid_to=None
+    ).save()
+    await inventory_service.receive_stock(mouse.id, 3, note="test stock")
 
-    unpriced = Product(name="Ghost", description="No price", stock=5, category=None)
+    unpriced = Product(name="Ghost", description="No price", category=None)
     await unpriced.save()
+    await inventory_service.receive_stock(unpriced.id, 5, note="test stock")
 
-    return {"category": category, "laptop": laptop, "mouse": mouse, "unpriced": unpriced}
+    return {
+        "category": category,
+        "laptop": laptop,
+        "mouse": mouse,
+        "unpriced": unpriced,
+    }

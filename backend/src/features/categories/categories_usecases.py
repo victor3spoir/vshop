@@ -2,11 +2,16 @@
 
 import uuid
 
+from fastapi_pagination import Page
+
+from pagination import paginate_select
 from vshop.tables import Category
 
 
-async def list_categories() -> list[dict]:
-    return await Category.select().order_by(Category.name)
+async def list_categories() -> Page[dict]:
+    return await paginate_select(
+        Category.select().order_by(Category.name), Category.count()
+    )
 
 
 async def get_category(category_id: uuid.UUID) -> dict | None:

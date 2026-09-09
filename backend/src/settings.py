@@ -48,6 +48,15 @@ class Settings(BaseSettings):
     db_user: str = "postgres"
     db_password: SecretStr = SecretStr("postgres")
 
+    # Redis cache and rate limiting
+    redis_url: SecretStr
+    redis_prefix: str = "vshop"
+    catalog_cache_ttl: int = 60
+    private_cache_ttl: int = 15
+    api_rate_limit: str = "120/minute"
+    api_write_rate_limit: str = "30/minute"
+    redis_rate_limit_fail_closed: bool = True
+
     # S3 object storage (rustfs locally; any S3-compatible service in prod)
     s3_endpoint_url: str = "http://localhost:9000"
     s3_region: str = "us-east-1"

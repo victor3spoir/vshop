@@ -1,6 +1,7 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import {
 	ChevronsUpDown,
+	Database,
 	LayoutDashboard,
 	LogOut,
 	Store,
@@ -37,6 +38,11 @@ const NAV_GROUPS = [
 		],
 	},
 ] as const;
+
+// The Piccolo Admin console: served by the backend, reached through the
+// same-origin /backend proxy. It has its own session login (Piccolo BaseUser),
+// separate from better-auth, so it opens in a new tab rather than embedding.
+const CONSOLE_URL = "/backend/console/";
 
 type SidebarUser = { name: string; email: string };
 
@@ -89,6 +95,19 @@ export function AdminSidebar({ user }: { user: SidebarUser }) {
 						</SidebarMenu>
 					</SidebarGroup>
 				))}
+				<SidebarGroup>
+					<SidebarGroupLabel>Back office</SidebarGroupLabel>
+					<SidebarMenu>
+						<SidebarMenuItem>
+							<SidebarMenuButton asChild>
+								<a href={CONSOLE_URL} target="_blank" rel="noreferrer">
+									<Database className="size-4" />
+									<span>Data console</span>
+								</a>
+							</SidebarMenuButton>
+						</SidebarMenuItem>
+					</SidebarMenu>
+				</SidebarGroup>
 			</SidebarContent>
 			<SidebarFooter className="border-t">
 				<SidebarMenu>

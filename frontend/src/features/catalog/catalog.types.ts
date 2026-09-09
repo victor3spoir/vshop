@@ -1,3 +1,12 @@
+// Pagination envelope returned by fastapi-pagination on every list endpoint.
+export type Page<T> = {
+	items: T[];
+	total: number;
+	page: number;
+	size: number;
+	pages: number;
+};
+
 export type Category = {
 	id: string;
 	name: string;

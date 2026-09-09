@@ -9,7 +9,7 @@ A simple e-commerce REST API built with [FastAPI](https://fastapi.tiangolo.com/)
 - **Admin console**: [Piccolo Admin](https://piccolo-orm.com/ecosystem/) mounted at `/console`
 - **Interactive docs**: OpenAPI/Swagger UI out of the box
 - **Typed settings**: environment-driven configuration via `pydantic-settings`
-- **Seeding**: generate realistic fake data with Faker
+- **Seeding**: import realistic products and images from DummyJSON
 
 ## Tech stack
 
@@ -57,7 +57,11 @@ uv sync
 docker compose up -d
 ```
 
-This starts PostgreSQL 18 on port `35432` (see `compose.yml`).
+This starts PostgreSQL 18 on port `35432`, Redis 8 on port `36379`, and
+RustFS object storage on ports `9000` and `9001` (see `compose.yml`). Redis
+requires `REDIS_PASSWORD` from the root `.env` file and includes a
+password-authenticated health check.
+Set the same password in `backend/src/.env` as part of `REDIS_URL`.
 
 ### 3. Configure the environment
 
@@ -77,10 +81,21 @@ uv run piccolo migrations forwards all
 ### 5. Seed sample data (optional)
 
 ```bash
-uv run python -m scripts.seed                 # 6 categories, 30 products
-uv run python -m scripts.seed --products 100
-uv run python -m scripts.seed --fresh         # wipe catalog data first
+uv run python -m scripts.seed                 # complete DummyJSON catalog
+uv run python -m scripts.seed --products 50   # import the first 50 products
+uv run python -m scripts.seed --fresh         # wipe data, then import all
 ```
+
+The seeder maps DummyJSON into vshop's existing category, product, price, and
+inventory tables. Product thumbnails are downloaded into the configured S3
+media bucket, so the storefront does not depend on remote image hotlinks.
+
+API GET responses are cached in Redis. Catalog entries use a 60-second TTL;
+authenticated cart, order, and inventory responses use private, identity-scoped
+15-second entries. Successful writes invalidate all affected cache groups. Every
+API route is limited to 120 requests per minute per client, with an additional
+30 requests per minute limit on write operations. These values are configurable
+through the settings documented in `backend/src/.env.example`.
 
 ### 6. Run the server
 

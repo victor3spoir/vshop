@@ -3,7 +3,10 @@
 import datetime
 import uuid
 
-from vshop.tables import Product, ProductPrice
+from fastapi_pagination import Page
+
+from pagination import paginate_select
+from vshop.tables import Inventory, Product, ProductPrice
 
 
 async def _attach_current_price(rows: list[dict]) -> list[dict]:
@@ -25,11 +28,28 @@ async def _attach_current_price(rows: list[dict]) -> list[dict]:
     return rows
 
 
+async def _attach_stock(rows: list[dict]) -> list[dict]:
+    """Expose sellable quantity (on hand minus reserved) as 'stock'."""
+    for row in rows:
+        inventory = (
+            await Inventory.select(
+                Inventory.quantity_on_hand, Inventory.quantity_reserved
+            )
+            .where(Inventory.product == row["id"])
+            .first()
+        )
+        row["stock"] = (
+            inventory["quantity_on_hand"] - inventory["quantity_reserved"]
+            if inventory
+            else 0
+        )
+    return rows
+
+
 _PRODUCT_COLUMNS = (
     Product.id,
     Product.name,
     Product.description,
-    Product.stock,
     Product.image,
     Product.created_at,
     Product.updated_at,
@@ -39,11 +59,18 @@ _PRODUCT_COLUMNS = (
 )
 
 
-async def list_products(category_id: uuid.UUID | None = None) -> list[dict]:
+async def _enrich(rows) -> list[dict]:
+    """Page transformer: resolve price and stock for the current page only."""
+    return await _attach_stock(await _attach_current_price(list(rows)))
+
+
+async def list_products(category_id: uuid.UUID | None = None) -> Page[dict]:
     query = Product.select(*_PRODUCT_COLUMNS).order_by(Product.name)
+    count_query = Product.count()
     if category_id:
         query = query.where(Product.category == category_id)
-    return await _attach_current_price(await query)
+        count_query = count_query.where(Product.category == category_id)
+    return await paginate_select(query, count_query, transformer=_enrich)
 
 
 async def get_product(product_id: uuid.UUID) -> dict | None:
@@ -52,4 +79,4 @@ async def get_product(product_id: uuid.UUID) -> dict | None:
     )
     if not row:
         return None
-    return (await _attach_current_price([row]))[0]
+    return (await _attach_stock(await _attach_current_price([row])))[0]

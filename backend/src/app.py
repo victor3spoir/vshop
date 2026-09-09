@@ -3,14 +3,17 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, status
 from fastapi.responses import RedirectResponse
 from fastapi.routing import Mount
+from fastapi_pagination import add_pagination
 from piccolo.engine import engine_finder
+from redis_fastapi import FastAPIRedis
 
 from features.cart.route import cart_router
 from features.categories.route import category_router
+from features.inventory.route import inventory_router
 from features.orders.route import order_router
 from features.products.route import product_router
 from settings import get_settings
-from vshop.piccolo_app import ADMIN_APP
+from vshop.admin import ADMIN_APP
 from vshop.tables import PRODUCT_IMAGE_STORAGE
 
 settings = get_settings()
@@ -20,7 +23,7 @@ settings = get_settings()
 async def lifespan(app: FastAPI):
     engine = engine_finder()
     if not engine:
-        raise Exception("db engine not found")
+        raise RuntimeError("db engine not found")
     await engine.start_connection_pool()
     yield
     await engine.close_connection_pool()
@@ -38,11 +41,15 @@ app = FastAPI(
     ],
     lifespan=lifespan,
 )
+FastAPIRedis(app).lifespan().caching().rate_limiting()
 
 app.include_router(category_router, prefix="/api")
 app.include_router(product_router, prefix="/api")
 app.include_router(order_router, prefix="/api")
 app.include_router(cart_router, prefix="/api")
+app.include_router(inventory_router, prefix="/api")
+# Injects the page/size query params into every route returning a Page.
+add_pagination(app)
 
 
 @app.get("/static/{file_key:path}", include_in_schema=False)

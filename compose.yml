@@ -48,8 +48,33 @@ services:
     volumes:
       - vshop-rustfs-vol:/data
 
+  redis:
+    image: redis:8-alpine
+    command:
+      - sh
+      - -c
+      - exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD"
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - redis-cli --no-auth-warning -a "$$REDIS_PASSWORD" ping | grep PONG
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - 36379:6379
+    volumes:
+      - vshop-redis-vol:/data
+
 volumes:
   vshop-db-vol:
     name: vshop-db-vol
   vshop-rustfs-vol:
     name: vshop-rustfs-vol
+  vshop-redis-vol:
+    name: vshop-redis-vol

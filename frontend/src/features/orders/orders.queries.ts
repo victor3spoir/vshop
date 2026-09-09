@@ -3,13 +3,34 @@ import {
 	useMutation,
 	useQueryClient,
 } from "@tanstack/react-query";
+import type { Page } from "#/features/catalog/catalog.types";
 import type { Order } from "#/features/orders/orders.types";
 import { backendApi } from "#/integrations/backend-api";
 
-export const listOrdersQueryOptions = () =>
+export const ORDERS_PAGE_SIZE = 10;
+
+export const listOrdersQueryOptions = (page = 1) =>
 	queryOptions({
-		queryKey: ["orders"],
-		queryFn: ({ signal }) => backendApi<Order[]>("/orders/", { signal }),
+		queryKey: ["orders", { page }],
+		queryFn: ({ signal }) =>
+			backendApi<Page<Order>>("/orders/", {
+				params: { page, size: ORDERS_PAGE_SIZE },
+				signal,
+			}),
+		staleTime: 10_000,
+	});
+
+// Admin dashboard: only the total matters, so ask for the smallest page.
+export const pendingOrdersCountQueryOptions = () =>
+	queryOptions({
+		queryKey: ["orders", "pending-count"],
+		queryFn: async ({ signal }) => {
+			const page = await backendApi<Page<Order>>("/orders/", {
+				params: { order_status: "pending", page: 1, size: 1 },
+				signal,
+			});
+			return page.total;
+		},
 		staleTime: 10_000,
 	});
 

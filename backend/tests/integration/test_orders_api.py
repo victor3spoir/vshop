@@ -1,23 +1,37 @@
 """Integration: checkout and order lifecycle against real Postgres.
 
-These cover the money paths: stock decrement, price snapshots, total
-computation, transactional rollback, and stock restoration on cancel.
+These cover the money paths: stock reservation, price snapshots, total
+computation, transactional rollback, and reservation release on cancel.
 """
 
 import pytest
 
-from vshop.tables import Product
+from vshop.tables import Inventory
 
 pytestmark = pytest.mark.integration
 
 
 async def stock_of(product) -> int:
-    row = await Product.select(Product.stock).where(Product.id == product.id).first()
-    return row["stock"]
+    """Sellable quantity: on hand minus reserved."""
+    row = (
+        await Inventory.select(Inventory.quantity_on_hand, Inventory.quantity_reserved)
+        .where(Inventory.product == product.id)
+        .first()
+    )
+    return row["quantity_on_hand"] - row["quantity_reserved"]
+
+
+async def on_hand_of(product) -> int:
+    row = (
+        await Inventory.select(Inventory.quantity_on_hand)
+        .where(Inventory.product == product.id)
+        .first()
+    )
+    return row["quantity_on_hand"]
 
 
 class TestCheckout:
-    async def test_order_snapshots_price_and_decrements_stock(self, client, catalog):
+    async def test_order_snapshots_price_and_reserves_stock(self, client, catalog):
         laptop = catalog["laptop"]
         response = await client.post(
             "/api/orders/",
@@ -29,6 +43,8 @@ class TestCheckout:
         assert body["total_amount"] == "1999.98"
         assert body["items"][0]["price_at_purchase"] == "999.99"
         assert await stock_of(laptop) == 8
+        # Reservation only: goods have not left the warehouse yet.
+        assert await on_hand_of(laptop) == 10
 
     async def test_multi_item_total(self, client, catalog):
         response = await client.post(
@@ -70,7 +86,9 @@ class TestCheckout:
     async def test_unpriced_product_is_409(self, client, catalog):
         response = await client.post(
             "/api/orders/",
-            json={"items": [{"product_id": str(catalog["unpriced"].id), "quantity": 1}]},
+            json={
+                "items": [{"product_id": str(catalog["unpriced"].id), "quantity": 1}]
+            },
         )
         assert response.status_code == 409
         assert "no active price" in response.json()["detail"]
@@ -98,7 +116,11 @@ class TestOrderLifecycle:
     async def make_order(self, client, catalog, quantity=2):
         response = await client.post(
             "/api/orders/",
-            json={"items": [{"product_id": str(catalog["laptop"].id), "quantity": quantity}]},
+            json={
+                "items": [
+                    {"product_id": str(catalog["laptop"].id), "quantity": quantity}
+                ]
+            },
         )
         assert response.status_code == 201
         return response.json()
@@ -106,11 +128,12 @@ class TestOrderLifecycle:
     async def test_list_and_detail(self, client, catalog):
         order = await self.make_order(client, catalog)
         listed = (await client.get("/api/orders/")).json()
-        assert [item["id"] for item in listed] == [order["id"]]
+        assert listed["total"] == 1
+        assert [item["id"] for item in listed["items"]] == [order["id"]]
         detail = (await client.get(f"/api/orders/{order['id']}")).json()
         assert detail["items"][0]["quantity"] == 2
 
-    async def test_cancel_restores_stock(self, client, catalog):
+    async def test_cancel_releases_reservation(self, client, catalog):
         order = await self.make_order(client, catalog, quantity=3)
         assert await stock_of(catalog["laptop"]) == 7
 
@@ -118,6 +141,7 @@ class TestOrderLifecycle:
         assert response.status_code == 200
         assert response.json()["status"] == "cancelled"
         assert await stock_of(catalog["laptop"]) == 10
+        assert await on_hand_of(catalog["laptop"]) == 10
 
     async def test_cancel_twice_is_409(self, client, catalog):
         order = await self.make_order(client, catalog)

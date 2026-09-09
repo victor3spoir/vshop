@@ -7,6 +7,8 @@ license = { file = "LICENSE" }
 requires-python = ">=3.14"
 dependencies = [
     "boto3>=1.43.89",
+    "fastapi-pagination>=0.15.16",
+    "fastapi-redis-sdk>=0.8.0",
     "fastapi[standard]>=0.141.1",
     "httpx>=0.28",
     "piccolo-admin>=1.14.0",
@@ -17,9 +19,8 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "faker>=40.38.0",
+    "fakeredis[lua]>=2.38.0",
     "httpx>=0.28.1",
-    "pillow>=12.3.0",
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
     "ruff>=0.16.6",

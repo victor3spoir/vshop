@@ -2,6 +2,8 @@
 // Browser requests go through the /backend server-route proxy
 // (src/routes/backend.$.ts) to stay same-origin; during SSR loaders hit the
 // backend directly.
+
+import { createIsomorphicFn } from "@tanstack/react-start";
 import { up } from "up-fetch";
 
 const baseUrl =
@@ -25,9 +27,8 @@ function jwtExp(token: string): number {
 	}
 }
 
-async function getJwt(): Promise<string | null> {
-	if (typeof window === "undefined") {
-		// Dynamic imports keep server-only modules out of the client bundle.
+const getJwt = createIsomorphicFn()
+	.server(async (): Promise<string | null> => {
 		const [{ auth }, { getRequestHeaders }] = await Promise.all([
 			import("#/lib/auth"),
 			import("@tanstack/react-start/server"),
@@ -36,17 +37,18 @@ async function getJwt(): Promise<string | null> {
 			.getToken({ headers: getRequestHeaders() })
 			.catch(() => null);
 		return result?.token ?? null;
-	}
-	if (clientToken && Date.now() < clientToken.exp - 30_000) {
-		return clientToken.value;
-	}
-	const response = await fetch("/api/auth/token");
-	if (!response.ok) return null; // anonymous - public endpoints still work
-	const { token } = (await response.json()) as { token?: string };
-	if (!token) return null;
-	clientToken = { value: token, exp: jwtExp(token) };
-	return token;
-}
+	})
+	.client(async (): Promise<string | null> => {
+		if (clientToken && Date.now() < clientToken.exp - 30_000) {
+			return clientToken.value;
+		}
+		const response = await fetch("/api/auth/token");
+		if (!response.ok) return null;
+		const { token } = (await response.json()) as { token?: string };
+		if (!token) return null;
+		clientToken = { value: token, exp: jwtExp(token) };
+		return token;
+	});
 
 export function dropCachedJwt() {
 	clientToken = null;

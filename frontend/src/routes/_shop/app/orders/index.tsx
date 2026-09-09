@@ -1,23 +1,32 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { Package } from "lucide-react";
+import { z } from "zod";
 import { OrderStatusBadge } from "#/components/order-status";
+import { PaginationControls } from "#/components/pagination-controls";
 import { formatPrice } from "#/features/catalog/catalog.types";
 import { listOrdersQueryOptions } from "#/features/orders/orders.queries";
 
 export const Route = createFileRoute("/_shop/app/orders/")({
+	validateSearch: z.object({
+		page: z.number().int().positive().optional().catch(undefined),
+	}),
 	beforeLoad: ({ context }) => {
 		if (!context.session) {
 			throw redirect({ to: "/sign-in", search: { redirect: "/app/orders" } });
 		}
 	},
-	loader: ({ context }) =>
-		context.queryClient.ensureQueryData(listOrdersQueryOptions()),
+	loaderDeps: ({ search }) => ({ page: search.page ?? 1 }),
+	loader: ({ context, deps }) =>
+		context.queryClient.ensureQueryData(listOrdersQueryOptions(deps.page)),
 	component: OrdersPage,
 });
 
 function OrdersPage() {
-	const { data: orders } = useSuspenseQuery(listOrdersQueryOptions());
+	const { page = 1 } = Route.useSearch();
+	const navigate = Route.useNavigate();
+	const { data: ordersPage } = useSuspenseQuery(listOrdersQueryOptions(page));
+	const orders = ordersPage.items;
 
 	if (orders.length === 0) {
 		return (
@@ -55,6 +64,15 @@ function OrdersPage() {
 					</li>
 				))}
 			</ul>
+			<PaginationControls
+				page={page}
+				pages={ordersPage.pages}
+				onPageChange={(next) =>
+					navigate({
+						search: { page: next === 1 ? undefined : next },
+					})
+				}
+			/>
 		</div>
 	);
 }

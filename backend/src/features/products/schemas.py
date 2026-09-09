@@ -17,3 +17,5 @@ class ProductOut(_ProductOut):
     category: str | None = None
     category_id: uuid.UUID | None = None
     current_price: decimal.Decimal | None = None
+    # Sellable quantity resolved from the Inventory table (on hand - reserved).
+    stock: int = 0

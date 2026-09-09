@@ -4,7 +4,9 @@ from settings import Environment, Settings
 
 
 def make(env_value: str | None) -> Settings:
-    kwargs = {} if env_value is None else {"python_env": env_value}
+    kwargs = {"redis_url": "redis://:test@localhost:6379/0"}
+    if env_value is not None:
+        kwargs["python_env"] = env_value
     # _env_file=None isolates tests from the developer's local .env file.
     return Settings(_env_file=None, **kwargs)
 
@@ -39,7 +41,11 @@ class TestDocsExposure:
 
 class TestSecrets:
     def test_db_password_never_leaks_in_repr(self):
-        s = Settings(_env_file=None, db_password="hunter2-super-secret")
+        s = Settings(
+            _env_file=None,
+            db_password="hunter2-super-secret",
+            redis_url="redis://:test@localhost:6379/0",
+        )
         assert "hunter2-super-secret" not in repr(s)
         assert "hunter2-super-secret" not in str(s.db_password)
         assert s.db_password.get_secret_value() == "hunter2-super-secret"

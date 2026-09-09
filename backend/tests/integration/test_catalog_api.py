@@ -9,7 +9,7 @@ class TestCategories:
     async def test_list(self, client, catalog):
         response = await client.get("/api/categories/")
         assert response.status_code == 200
-        body = response.json()
+        body = response.json()["items"]
         assert len(body) == 1
         assert body[0]["name"] == "Electronics"
         assert body[0]["slug"] == "electronics"
@@ -31,7 +31,9 @@ class TestProducts:
     async def test_list_resolves_category_name_and_price(self, client, catalog):
         response = await client.get("/api/products/")
         assert response.status_code == 200
-        by_name = {item["name"]: item for item in response.json()}
+        body = response.json()
+        assert body["total"] == 3
+        by_name = {item["name"]: item for item in body["items"]}
         assert len(by_name) == 3
 
         laptop = by_name["Laptop"]
@@ -47,8 +49,18 @@ class TestProducts:
     async def test_filter_by_category(self, client, catalog):
         category_id = str(catalog["category"].id)
         response = await client.get(f"/api/products/?category_id={category_id}")
-        names = {item["name"] for item in response.json()}
+        names = {item["name"] for item in response.json()["items"]}
         assert names == {"Laptop", "Mouse"}
+
+    async def test_pagination_envelope_and_page_size(self, client, catalog):
+        response = await client.get("/api/products/?page=2&size=2")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["total"] == 3
+        assert body["page"] == 2
+        assert body["size"] == 2
+        assert body["pages"] == 2
+        assert len(body["items"]) == 1
 
     async def test_detail(self, client, catalog):
         response = await client.get(f"/api/products/{catalog['laptop'].id}")

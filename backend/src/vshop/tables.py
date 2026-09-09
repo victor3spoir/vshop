@@ -24,7 +24,6 @@ class Product(Table):
     id = UUID(primary_key=True)
     name = Varchar(length=200)
     description = Text(null=True)
-    stock = Integer(default=0)
     image = Varchar(null=True)
     category = ForeignKey(references=Category, null=True)
     # Timestamps
@@ -91,6 +90,34 @@ class CartItem(Table):
     # Timestamps
     created_at = Timestamp(default=TimestampNow())
     updated_at = Timestamp(default=TimestampNow(), auto_update=datetime.datetime.now)
+
+
+class Inventory(Table):
+    """Stock position per product; quantities only change through the
+    inventory service, which records a ledger row for every movement."""
+
+    id = UUID(primary_key=True)
+    product = ForeignKey(references=Product, unique=True)
+    quantity_on_hand = Integer(default=0)
+    quantity_reserved = Integer(default=0)
+    reorder_level = Integer(default=0)
+    # Timestamps
+    created_at = Timestamp(default=TimestampNow())
+    updated_at = Timestamp(default=TimestampNow(), auto_update=datetime.datetime.now)
+
+
+class InventoryTransaction(Table):
+    """Append-only movement ledger: signed quantity per transaction type
+    (e.g. +100 PURCHASE, -5 SALE, -2 DAMAGE, +1 RETURN)."""
+
+    id = UUID(primary_key=True)
+    inventory = ForeignKey(references=Inventory)
+    type = Varchar(length=20, index=True)
+    quantity = Integer()
+    reference_type = Varchar(length=30, null=True)
+    reference_id = Varchar(length=64, null=True)
+    note = Text(null=True)
+    created_at = Timestamp(default=TimestampNow())
 
 
 _settings = get_settings()

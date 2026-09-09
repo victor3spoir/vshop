@@ -38,6 +38,11 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 			{
 				title: "vshop",
 			},
+			{
+				name: "description",
+				content:
+					"Shop a curated catalog with clear pricing, live stock, and secure checkout.",
+			},
 			{ name: "theme-color", content: "#2563eb" },
 		],
 		links: [
@@ -46,7 +51,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 				href: appCss,
 			},
 			{ rel: "icon", href: "/brand/favicon.ico", sizes: "48x48" },
-			{ rel: "icon", href: "/brand/logo.svg", type: "image/svg+xml" },
+			{ rel: "icon", href: "/brand/logo-v2.svg", type: "image/svg+xml" },
 			{ rel: "apple-touch-icon", href: "/brand/logo-192.png" },
 		],
 	}),
