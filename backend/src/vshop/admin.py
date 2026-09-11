@@ -20,7 +20,6 @@ from piccolo.query.functions.aggregate import Count, Sum
 from piccolo.table import Table
 from piccolo_admin.endpoints import (
     FormConfig,
-    OrderBy,
     TableConfig,
     Validators,
     create_admin,
@@ -114,141 +113,41 @@ ADMIN_TABLES: list[type[Table] | TableConfig] = [
     TableConfig(
         table_class=Product,
         menu_group="Catalog",
-        link_column=Product.name,
         media_storage=[PRODUCT_IMAGE_STORAGE],
-        visible_columns=[
-            Product.id,
-            Product.name,
-            Product.category,
-            Product.image,
-            Product.created_at,
-        ],
-        visible_filters=[Product.name, Product.category, Product.created_at],
-        order_by=[OrderBy(Product.name)],
     ),
     TableConfig(
         table_class=Category,
         menu_group="Catalog",
-        link_column=Category.name,
-        visible_columns=[
-            Category.id,
-            Category.name,
-            Category.slug,
-            Category.created_at,
-        ],
-        visible_filters=[Category.name, Category.slug],
-        order_by=[OrderBy(Category.name)],
     ),
     TableConfig(
         table_class=ProductPrice,
         menu_group="Catalog",
-        visible_columns=[
-            ProductPrice.id,
-            ProductPrice.product,
-            ProductPrice.price,
-            ProductPrice.price_type,
-            ProductPrice.valid_from,
-            ProductPrice.valid_to,
-        ],
-        visible_filters=[
-            ProductPrice.product,
-            ProductPrice.price_type,
-            ProductPrice.valid_from,
-        ],
-        # Newest price first: the row without valid_to at the top is the
-        # current price (matches how the shop resolves prices).
-        order_by=[OrderBy(ProductPrice.valid_from, ascending=False)],
     ),
     # --- Orders ---------------------------------------------------------
     TableConfig(
         table_class=Order,
         menu_group="Orders",
-        visible_columns=[
-            Order.id,
-            Order.user_id,
-            Order.status,
-            Order.total_amount,
-            Order.created_at,
-        ],
-        visible_filters=[
-            Order.user_id,
-            Order.status,
-            Order.total_amount,
-            Order.created_at,
-        ],
-        order_by=[OrderBy(Order.created_at, ascending=False)],
         validators=_ORDER_READ_ONLY,
     ),
     TableConfig(
         table_class=OrderItem,
         menu_group="Orders",
-        visible_columns=[
-            OrderItem.id,
-            OrderItem.order,
-            OrderItem.product,
-            OrderItem.quantity,
-            OrderItem.price_at_purchase,
-            OrderItem.created_at,
-        ],
-        visible_filters=[OrderItem.order, OrderItem.product],
-        order_by=[OrderBy(OrderItem.created_at, ascending=False)],
         validators=_ORDER_ITEM_READ_ONLY,
     ),
     TableConfig(
         table_class=CartItem,
         menu_group="Orders",
-        visible_columns=[
-            CartItem.id,
-            CartItem.user_id,
-            CartItem.product,
-            CartItem.quantity,
-            CartItem.updated_at,
-        ],
-        visible_filters=[CartItem.user_id, CartItem.product],
-        order_by=[OrderBy(CartItem.updated_at, ascending=False)],
         validators=_CART_VIEW_AND_REMOVE,
     ),
     # --- Inventory --------------------------------------------------------
     TableConfig(
         table_class=Inventory,
         menu_group="Inventory",
-        visible_columns=[
-            Inventory.id,
-            Inventory.product,
-            Inventory.quantity_on_hand,
-            Inventory.quantity_reserved,
-            Inventory.reorder_level,
-            Inventory.updated_at,
-        ],
-        visible_filters=[
-            Inventory.product,
-            Inventory.quantity_on_hand,
-            Inventory.reorder_level,
-        ],
-        order_by=[OrderBy(Inventory.quantity_on_hand)],
         validators=_INVENTORY_READ_ONLY,
     ),
     TableConfig(
         table_class=InventoryTransaction,
         menu_group="Inventory",
-        visible_columns=[
-            InventoryTransaction.id,
-            InventoryTransaction.created_at,
-            InventoryTransaction.type,
-            InventoryTransaction.quantity,
-            InventoryTransaction.inventory,
-            InventoryTransaction.reference_type,
-            InventoryTransaction.reference_id,
-            InventoryTransaction.note,
-        ],
-        visible_filters=[
-            InventoryTransaction.inventory,
-            InventoryTransaction.type,
-            InventoryTransaction.reference_type,
-            InventoryTransaction.reference_id,
-            InventoryTransaction.created_at,
-        ],
-        order_by=[OrderBy(InventoryTransaction.created_at, ascending=False)],
         validators=_LEDGER_READ_ONLY,
     ),
 ]
@@ -649,7 +548,6 @@ def build_admin():
     admin = create_admin(
         tables=ADMIN_TABLES,
         forms=ADMIN_FORMS,
-        page_size=15,
         site_name="vshop admin",
         sidebar_links={"Dashboard": "/console/dashboard/"},
         # In production this enforces HTTPS-only cookies and rate-limits
