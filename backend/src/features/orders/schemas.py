@@ -24,12 +24,17 @@ class OrderCreate(BaseModel):
     items: list[OrderItemIn] = Field(min_length=1)
 
 
-OrderItemOut = create_pydantic_model(
+_OrderItemOut = create_pydantic_model(
     OrderItem,
     include_default_columns=True,
     exclude_columns=(OrderItem.order,),
-    model_name="OrderItemOut",
+    model_name="_OrderItemOut",
 )
+
+
+class OrderItemOut(_OrderItemOut):
+    product_name: str | None = None
+    product_image: str | None = None
 
 _OrderOut = create_pydantic_model(
     Order,

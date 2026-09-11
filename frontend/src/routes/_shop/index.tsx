@@ -1,4 +1,8 @@
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import {
+	queryOptions,
+	useQuery,
+	useSuspenseQuery,
+} from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
 	ArrowRight,
@@ -19,8 +23,24 @@ import {
 	listCategoriesQueryOptions,
 	listProductsQueryOptions,
 } from "#/features/catalog/catalog.queries";
+import type { Page } from "#/features/catalog/catalog.types";
 import { formatPrice, type Product } from "#/features/catalog/catalog.types";
-import { backendMediaUrl } from "#/integrations/backend-api";
+import { backendApi, backendMediaUrl } from "#/integrations/backend-api";
+
+// Wide sample of the catalog so every category tile can find a
+// representative image, even when its products sit on later pages.
+const categoryShowcaseQueryOptions = () =>
+	queryOptions({
+		queryKey: ["products", "showcase"],
+		queryFn: async ({ signal }) => {
+			const page = await backendApi<Page<Product>>("/products/", {
+				params: { page: 1, size: 100 },
+				signal,
+			});
+			return page.items;
+		},
+		staleTime: 60_000,
+	});
 
 const catalogSearchSchema = z.object({
 	category: z.string().optional(),
@@ -36,7 +56,7 @@ export const Route = createFileRoute("/_shop/")({
 	loader: ({ context, deps }) =>
 		Promise.all([
 			context.queryClient.ensureQueryData(listCategoriesQueryOptions()),
-			context.queryClient.ensureQueryData(listProductsQueryOptions()),
+			context.queryClient.ensureQueryData(categoryShowcaseQueryOptions()),
 			context.queryClient.ensureQueryData(
 				listProductsQueryOptions(deps.category, deps.page),
 			),
@@ -59,12 +79,12 @@ function CatalogPage() {
 	const { session } = Route.useRouteContext();
 	const navigate = useNavigate();
 	const { data: categories } = useSuspenseQuery(listCategoriesQueryOptions());
-	const { data: firstPage } = useSuspenseQuery(listProductsQueryOptions());
+	const { data: allProducts } = useSuspenseQuery(
+		categoryShowcaseQueryOptions(),
+	);
 	const { data: productsPage } = useSuspenseQuery(
 		listProductsQueryOptions(category, page),
 	);
-	// Category tiles pick a representative image from the first catalog page.
-	const allProducts = firstPage.items;
 	const products = productsPage.items;
 	const { data: cart } = useQuery({
 		...cartQueryOptions(),
@@ -106,22 +126,12 @@ function CatalogPage() {
 								clear pricing, live stock, and fast order processing.
 							</p>
 						</div>
-						<div className="flex flex-wrap gap-3">
-							<Button asChild size="lg">
-								<a href="#catalog">
-									Shop the catalog
-									<ArrowRight className="size-4" />
-								</a>
-							</Button>
-							<Button
-								asChild
-								size="lg"
-								variant="outline"
-								className="border-white/40 bg-white/10 text-white hover:bg-white/20 hover:text-white"
-							>
-								<a href="#categories">Browse categories</a>
-							</Button>
-						</div>
+						<Button asChild size="lg" className="w-fit">
+							<a href="#catalog">
+								Shop the catalog
+								<ArrowRight className="size-4" />
+							</a>
+						</Button>
 					</div>
 				</div>
 			</section>
@@ -196,7 +206,7 @@ function CatalogPage() {
 					<div className="flex items-end justify-between gap-4">
 						<div>
 							<h2 className="text-2xl font-bold sm:text-3xl">
-								{activeCategory ? activeCategory.name : "Featured products"}
+								{activeCategory ? activeCategory.name : "All products"}
 							</h2>
 							<p className="mt-1 text-sm text-muted-foreground">
 								{productsPage.total}{" "}

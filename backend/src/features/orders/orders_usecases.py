@@ -44,7 +44,11 @@ async def _current_price(product_id: uuid.UUID) -> decimal.Decimal | None:
 
 
 async def _attach_items(order: dict) -> dict:
-    order["items"] = await OrderItem.select().where(OrderItem.order == order["id"])
+    order["items"] = await OrderItem.select(
+        OrderItem.all_columns(),
+        OrderItem.product.name.as_alias("product_name"),
+        OrderItem.product.image.as_alias("product_image"),
+    ).where(OrderItem.order == order["id"])
     return order
 
 

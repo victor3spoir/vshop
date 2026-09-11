@@ -1,6 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { ArrowLeft, Ban } from "lucide-react";
+import { ArrowLeft, Ban, Package } from "lucide-react";
 import { OrderStatusBadge } from "#/components/order-status";
 import { Button } from "#/components/ui/button";
 import { formatPrice } from "#/features/catalog/catalog.types";
@@ -8,6 +8,7 @@ import {
 	getOrderQueryOptions,
 	useCancelOrderMutation,
 } from "#/features/orders/orders.queries";
+import { backendMediaUrl } from "#/integrations/backend-api";
 
 export const Route = createFileRoute("/_shop/app/orders/$orderId/")({
 	beforeLoad: ({ context, params }) => {
@@ -38,29 +39,56 @@ function OrderDetailPage() {
 					Orders
 				</Link>
 			</Button>
-			<div className="flex flex-wrap items-center gap-3">
-				<h1 className="text-xl font-semibold">Order</h1>
-				<OrderStatusBadge status={order.status} />
-				<span className="font-mono text-xs text-muted-foreground">
-					{order.id}
-				</span>
+			<div className="space-y-1">
+				<div className="flex flex-wrap items-center gap-3">
+					<h1 className="text-xl font-semibold">
+						Order placed{" "}
+						{new Date(order.created_at).toLocaleDateString(undefined, {
+							month: "long",
+							day: "numeric",
+							year: "numeric",
+						})}
+					</h1>
+					<OrderStatusBadge status={order.status} />
+				</div>
+				<p className="text-xs text-muted-foreground">
+					{new Date(order.created_at).toLocaleTimeString()} · Ref{" "}
+					<span className="font-mono">{order.id.slice(0, 8)}</span>
+				</p>
 			</div>
-			<p className="text-sm text-muted-foreground">
-				Placed {new Date(order.created_at).toLocaleString()}
-			</p>
 			<ul className="divide-y rounded-lg border">
 				{order.items.map((i) => (
-					<li key={i.id} className="flex items-center gap-4 p-4 text-sm">
-						<Link
-							to="/app/products/$productId"
-							params={{ productId: i.product }}
-							className="min-w-0 flex-1 truncate font-mono text-xs hover:underline"
-						>
-							{i.product}
-						</Link>
-						<span className="tabular-nums">x{i.quantity}</span>
+					<li key={i.id} className="flex items-center gap-3 p-4 text-sm">
+						<div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
+							{i.product_image ? (
+								<img
+									src={backendMediaUrl(i.product_image)}
+									alt=""
+									className="size-full object-cover"
+								/>
+							) : (
+								<Package className="size-4 text-muted-foreground" />
+							)}
+						</div>
+						<div className="min-w-0 flex-1">
+							<Link
+								to="/app/products/$productId"
+								params={{ productId: i.product }}
+								className="truncate font-medium hover:underline"
+							>
+								{i.product_name ?? "Product"}
+							</Link>
+							<p className="text-xs text-muted-foreground">
+								{formatPrice(i.price_at_purchase)} each
+							</p>
+						</div>
+						<span className="tabular-nums text-muted-foreground">
+							x{i.quantity}
+						</span>
 						<span className="w-24 text-right font-medium tabular-nums">
-							{formatPrice(i.price_at_purchase)}
+							{formatPrice(
+								Number.parseFloat(i.price_at_purchase) * i.quantity,
+							)}
 						</span>
 					</li>
 				))}

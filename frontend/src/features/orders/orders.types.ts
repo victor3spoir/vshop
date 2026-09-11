@@ -10,6 +10,8 @@ export type OrderStatus =
 export type OrderItem = {
 	id: string;
 	product: string;
+	product_name: string | null;
+	product_image: string | null;
 	quantity: number;
 	price_at_purchase: string;
 };
