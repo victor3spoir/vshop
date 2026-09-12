@@ -18,8 +18,7 @@ jobs:
         id: filter
         with:
           filters: |
-            base: ${{ github.event.before }}
-            ref: ${{ github.sha }}
+            base: ${{ github.ref }}
             backend:
               - 'backend/**'
             frontend:
