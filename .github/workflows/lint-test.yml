@@ -32,15 +32,10 @@ jobs:
           head: ${{ github.sha }}
           extra_args: --sarif --results=verified,unknown
 
-      - name: Upload SARIF results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: trufflehog.sarif
-
-      # - name: Detect secrets
-      #   uses: gitleaks/gitleaks-action@v2
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Upload SARIF results to GitHub Security
+      #   uses: github/codeql-action/upload-sarif@v3
+      #   with:
+      #     sarif_file: trufflehog.sarif
 
   detect-changes:
     needs: security-job
