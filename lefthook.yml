@@ -3,7 +3,7 @@ pre-commit:
 
   commands:
     secrets:
-      run: gitleaks protect --staged --verbose
+      run: gitleaks protect --staged 
 
     frontend-check:
       root: frontend/
