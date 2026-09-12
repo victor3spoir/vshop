@@ -34,11 +34,11 @@ function OrdersPage() {
 			.filter((n): n is string => Boolean(n));
 		if (names.length === 0) {
 			const count = o.items.reduce((sum, i) => sum + i.quantity, 0);
-			return count > 0 ? count + " item" + (count > 1 ? "s" : "") : "Order";
+			return count > 0 ? `${count} item${count > 1 ? "s" : ""}` : "Order";
 		}
 		const head = names.slice(0, 2).join(", ");
 		const rest = names.length - 2;
-		return rest > 0 ? head + " +" + rest + " more" : head;
+		return rest > 0 ? `${head} +${rest} more` : head;
 	};
 
 	if (orders.length === 0) {
