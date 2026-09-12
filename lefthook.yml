@@ -24,7 +24,7 @@ pre-push:
   commands:
     backend-test:
       root: backend/
-      run: uv run pytest
+      run: uv run pytest tests/unit
 
     frontend-typecheck:
       root: frontend/

@@ -23,7 +23,7 @@ jobs:
       - uses: dorny/paths-filter@v4
         id: filter
         with:
-          base: ${{ github.ref }}
+          # base: ${{ github.ref }}
           filters: |
             backend:
               - 'backend/**'
