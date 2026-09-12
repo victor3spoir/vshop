@@ -37,7 +37,10 @@ app = FastAPI(
     redoc_url=settings.redoc_url,
     openapi_url=settings.openapi_url,
     routes=[
-        Mount("/console", ADMIN_APP),
+        Mount(
+            "/console",
+            ADMIN_APP,
+        ),
     ],
     lifespan=lifespan,
 )
