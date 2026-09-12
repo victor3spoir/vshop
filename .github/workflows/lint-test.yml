@@ -15,11 +15,19 @@ jobs:
     name: Security
     steps:
       - uses: actions/checkout@v7
-
-      - name: Detect secrets
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+      - name: TruffleHog OSS
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --results=verified,unknown --fail
+          
+      # - name: Detect secrets
+      #   uses: gitleaks/gitleaks-action@v2
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   detect-changes:
     needs: security-job
@@ -49,6 +57,7 @@ jobs:
         working-directory: ./backend
     steps:
       - uses: actions/checkout@v7
+
 
       - name: Install uv
         uses: astral-sh/setup-uv@v6
