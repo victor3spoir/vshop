@@ -6,7 +6,21 @@ on:
       - main
       - dev
 
+permissions:
+  contents: write
+
 jobs:
+  security-job:
+    runs-on: ubuntu-latest
+    name: Security
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Detect secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
@@ -28,12 +42,63 @@ jobs:
     runs-on: ubuntu-latest
     needs: detect-changes
     if: needs.detect-changes.outputs.backend == 'true'
+    name: Lint & Format
+    defaults:
+      run:
+        working-directory: ./backend
     steps:
-      - run: echo "backend changed"
+      - uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Check formatting
+        run: uv run ruff format --check .
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Install pip-audit
+        run: uv tool install pip-audit
+
+      - name: Audit dependencies
+        run: uv run pip-audit
 
   frontend-job:
     runs-on: ubuntu-latest
     needs: detect-changes
     if: needs.detect-changes.outputs.frontend == 'true'
+    name: Lint, Format & Test
+    defaults:
+      run:
+        working-directory: ./frontend
     steps:
-      - run: echo "frontend changed"
+      - uses: actions/checkout@v7
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: frontend/package.json
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Lint,Check formatting
+        run: bunx biome ci .
+
+      - name: Type check
+        run: bun run typecheck
+
+      - name: Test
+        run: bun test
+
+      - name: Build
+        run: bun run build

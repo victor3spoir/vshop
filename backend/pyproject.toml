@@ -35,3 +35,12 @@ asyncio_mode = "auto"
 markers = [
     "integration: tests that require Docker (testcontainers)",
 ]
+
+[tool.ruff]
+exclude = [
+    ".venv",
+    "__pycache__",
+    "migrations",
+    "generated",
+    "docs",
+]

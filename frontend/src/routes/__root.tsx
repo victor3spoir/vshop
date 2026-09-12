@@ -15,8 +15,8 @@ type Session = typeof auth.$Infer.Session;
 export interface RouterAppContext {
 	queryClient: QueryClient;
 	auth: {
-		getSession: () => Promise<Session | null>;
 		getUser: () => Promise<Session["user"] | null>;
+		getSession: () => Promise<Session | null>;
 	};
 }
 

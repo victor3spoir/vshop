@@ -36,6 +36,7 @@ class OrderItemOut(_OrderItemOut):
     product_name: str | None = None
     product_image: str | None = None
 
+
 _OrderOut = create_pydantic_model(
     Order,
     include_default_columns=True,

@@ -2,6 +2,8 @@ import uuid
 
 from fastapi import APIRouter, HTTPException, status
 from fastapi_pagination import Page
+
+from features.auth.deps import AdminUser
 from redis_support import (
     API_RATE_LIMIT,
     CART_EVICTION,
@@ -10,8 +12,6 @@ from redis_support import (
     INVENTORY_EVICTION,
     WRITE_RATE_LIMIT,
 )
-
-from features.auth.deps import AdminUser
 
 from . import inventory_usecases as usecases
 from .inventory_service import InventoryError
