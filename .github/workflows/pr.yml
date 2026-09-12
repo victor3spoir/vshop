@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: pr-${{ github.event.pull_request.number }}
@@ -23,7 +24,7 @@ jobs:
       - uses: dorny/paths-filter@v4
         id: filter
         with:
-          # base: ${{ github.ref }}
+          base: ${{ github.ref }}
           filters: |
             backend:
               - 'backend/**'
