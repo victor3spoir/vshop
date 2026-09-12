@@ -56,7 +56,15 @@ jobs:
         run: uv sync --locked
 
       - name: Run tests
-        run: uv run pytest .
+        run: uv run pytest . --junitxml=test-reports.xml
+
+      - name: Publish test results
+        if: always()
+        uses: dorny/test-reporter@v2
+        with:
+          name: Backend Tests
+          path: backend/test-reports.xml
+          reporter: java-junit
 
   frontend-jobs:
     needs: detect-changes
@@ -81,4 +89,12 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Run tests
-        run: bun test
+        run: bun test --reporter=junit --reporter-outfile=test-results.xml
+
+      - name: Publish test results
+        if: always()
+        uses: dorny/test-reporter@v2
+        with:
+          name: Frontend Tests
+          path: frontend/test-reports.xml
+          reporter: java-junit
