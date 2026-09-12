@@ -4,6 +4,7 @@ pre-commit:
   commands:
     secrets:
       run: gitleaks protect --staged 
+      stage_fixed: true
 
     frontend-check:
       root: frontend/
