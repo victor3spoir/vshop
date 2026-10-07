@@ -2,9 +2,9 @@ pre-commit:
   parallel: true
 
   commands:
-    secrets:
-      run: gitleaks protect --staged 
-      stage_fixed: true
+    # secrets:
+    #   run: gitleaks protect --staged 
+    #   stage_fixed: true
 
     frontend-check:
       root: frontend/

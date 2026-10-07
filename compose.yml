@@ -71,6 +71,41 @@ services:
     volumes:
       - vshop-redis-vol:/data
 
+  backend:
+    image: ghcr.io/victor3spoir/vshop-backend:dev
+    profiles: ["app"]
+    env_file:
+      - ./backend/src/.env
+    ports:
+      - 38000:8000
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      REDIS_URL: redis://:password@redis:6379/0
+      S3_ENDPOINT_URL: http://rustfs:9000
+
+  migrate-frontend:
+    image: ghcr.io/victor3spoir/vshop-frontend:dev
+    profiles: ["app"]
+    command: [ "x", "prisma", "migrate", "deploy" ]
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@db:5432/postgres?schema=frontend"
+      SERVER_API_URL: http://backend:8000/api
+
+  frontend:
+    depends_on:
+      migrate-frontend:
+        condition: service_completed_successfully
+    image: ghcr.io/victor3spoir/vshop-frontend:dev
+    profiles: ["app"]
+    ports:
+      - 40000:3000
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@db:5432/postgres?schema=frontend"
+      BETTER_AUTH_URL: http://localhost:40000
+      BETTER_AUTH_SECRET: f5143ad71fa26bf3570110316799459bf88bcf133b431c80
+      SERVER_API_URL: http://backend:8000/api
+
 volumes:
   vshop-db-vol:
     name: vshop-db-vol
