@@ -1828,7 +1828,7 @@ wheels = [
 [[package]]
 name = "vshop"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "boto3" },
     { name = "fastapi", extra = ["standard"] },
