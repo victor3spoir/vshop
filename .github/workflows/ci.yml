@@ -1,0 +1,36 @@
+name: CI integration
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+
+permissions:
+  packages: write
+  
+
+jobs:
+  validate-branches:
+    runs-on: ubuntu-latest
+    steps:
+      - if: >
+          github.event_name == 'pull_request' && 
+          github.event.pull_request.base.ref == 'main' &&
+          github.event.pull_request.head.ref != 'dev' 
+        run: |
+          echo "::Error:: Only dev can merge into main "
+          exit 1
+
+  lint-backend:
+    needs: validate-branches
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
