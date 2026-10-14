@@ -7,17 +7,12 @@ is touched, then migrations run to build the schema.
 
 import asyncio
 import decimal
-import os
-
-os.environ.setdefault("REDIS_URL", "redis://:test@localhost:6379/0")
 
 import pytest
-from fakeredis.aioredis import FakeRedis
 from piccolo.engine.postgres import PostgresEngine
 from piccolo.table import Table
-from redis_fastapi import get_async_redis, get_rate_limit_backend
-from redis_fastapi.ratelimit_backend import RateLimitBackend
 from testcontainers.community.postgres import PostgresContainer
+from testcontainers.community.redis import RedisContainer
 
 from vshop.tables import (
     CartItem,
@@ -46,6 +41,14 @@ TABLES: list[type[Table]] = [
 def pg_container():
     with PostgresContainer("postgres:18-alpine") as container:
         yield container
+
+
+@pytest.fixture(scope="session")
+def redis_url():
+    with RedisContainer("redis:7-alpine") as container:
+        host = container.get_container_host_ip()
+        port = container.get_exposed_port(container.port)
+        yield f"redis://{host}:{port}/0"
 
 
 @pytest.fixture(scope="session")
@@ -89,8 +92,15 @@ _TEST_USER = {"id": "test-user", "email": "test@example.com"}
 
 
 @pytest.fixture
-async def client(clean_db, test_engine, monkeypatch):
+async def client(clean_db, test_engine, redis_url, monkeypatch):
     from httpx import ASGITransport, AsyncClient
+    from redis.asyncio import Redis
+
+    monkeypatch.setenv("REDIS_URL", redis_url)
+
+    redis_client = Redis.from_url(redis_url)
+    await redis_client.flushdb()
+    await redis_client.aclose()
 
     import app as app_module
     from features.auth.deps import AuthUser, get_current_user
@@ -104,19 +114,16 @@ async def client(clean_db, test_engine, monkeypatch):
     app_module.app.dependency_overrides[get_current_user] = lambda: AuthUser(
         **_TEST_USER, role="admin"
     )
-    redis = FakeRedis()
-    app_module.app.dependency_overrides[get_async_redis] = lambda: redis
-    app_module.app.dependency_overrides[get_rate_limit_backend] = lambda: (
-        RateLimitBackend(redis)
-    )
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app_module.app), base_url="http://testserver"
-    ) as http_client:
+    async with (
+        app_module.app.router.lifespan_context(app_module.app),
+        AsyncClient(
+            transport=ASGITransport(app=app_module.app), base_url="http://testserver"
+        ) as http_client,
+    ):
         yield http_client
 
     app_module.app.dependency_overrides.clear()
-    await redis.aclose()
 
 
 @pytest.fixture
