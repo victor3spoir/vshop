@@ -20,7 +20,7 @@ ENV NODE_ENV=production \
   
 COPY --from=builder /usr/app/.output ./.output
 COPY --from=builder --chown=bun:bun /usr/app/package.json ./
-# for prisma migration
+
 COPY --from=builder --chown=bun:bun /usr/app/prisma ./prisma
 COPY --from=builder --chown=bun:bun /usr/app/prisma.config.ts ./
 EXPOSE 3000
