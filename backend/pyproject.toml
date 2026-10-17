@@ -15,16 +15,32 @@ dependencies = [
     "piccolo[all]>=1.36.0",
     "pydantic-settings>=2.15.0",
     "pyjwt[crypto]>=2.10",
+    "pytest-cov>=7.1.0",
 ]
+
+[project.scripts]
+seed = "scripts.seed:cli"
+
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+py-modules = ["app", "pagination", "piccolo_conf", "redis_support", "settings"]
+include-package-data = false
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = false
 
 [dependency-groups]
 dev = [
-    "fakeredis[lua]>=2.38.0",
     "httpx>=0.28.1",
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
     "ruff>=0.16.6",
-    "testcontainers[postgres]>=4.15.0",
+    "testcontainers[postgres,redis]>=4.15.0",
 ]
 
 [tool.pytest.ini_options]
@@ -33,4 +49,13 @@ pythonpath = ["src"]
 asyncio_mode = "auto"
 markers = [
     "integration: tests that require Docker (testcontainers)",
+]
+
+[tool.ruff]
+exclude = [
+    ".venv",
+    "__pycache__",
+    "migrations",
+    "generated",
+    "docs",
 ]

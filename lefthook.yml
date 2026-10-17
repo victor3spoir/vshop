@@ -1,0 +1,39 @@
+pre-commit:
+  parallel: true
+
+  commands:
+    # secrets:
+    #   run: gitleaks protect --staged 
+    #   stage_fixed: true
+
+    frontend-check:
+      root: frontend/
+      run: bun biome check --write --unsafe
+
+    backend-format:
+      root: backend/
+      run: uv run ruff format --check .
+
+    backend-lint:
+      root: backend/
+      run: uv run ruff check --fix .
+
+pre-push:
+  parallel: true
+
+  commands:
+    backend-test:
+      root: backend/
+      run: uv run pytest tests/unit
+
+    frontend-typecheck:
+      root: frontend/
+      run: bun run typecheck
+
+    frontend-test:
+      root: frontend/
+      run: bun test
+
+    frontend-build:
+      root: frontend/
+      run: bun run build

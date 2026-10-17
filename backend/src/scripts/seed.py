@@ -4,10 +4,10 @@ The source data is adapted to vshop's normalized model: categories, products,
 price history, and inventory remain separate. Product thumbnails are downloaded
 and stored in the configured S3-compatible media bucket.
 
-Usage (from backend/src):
-    uv run python -m scripts.seed              # import the complete catalog
-    uv run python -m scripts.seed --products 50
-    uv run python -m scripts.seed --fresh      # wipe existing data first
+Usage (from backend):
+    uv run seed              # import the complete catalog
+    uv run seed --products 50
+    uv run seed --fresh       # wipe existing data first
 """
 
 import argparse
@@ -254,5 +254,9 @@ async def main() -> None:
         await engine.close_connection_pool()
 
 
-if __name__ == "__main__":
+def cli() -> None:
     asyncio.run(main())
+
+
+if __name__ == "__main__":
+    cli()

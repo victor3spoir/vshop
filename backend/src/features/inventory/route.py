@@ -23,8 +23,6 @@ from .schemas import (
     TransactionOut,
 )
 
-# Stock administration is admin-only; the shop reads availability
-# through the product endpoints.
 inventory_router = APIRouter(
     prefix="/inventory", tags=["inventory"], dependencies=[API_RATE_LIMIT]
 )

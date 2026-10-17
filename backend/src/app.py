@@ -37,7 +37,10 @@ app = FastAPI(
     redoc_url=settings.redoc_url,
     openapi_url=settings.openapi_url,
     routes=[
-        Mount("/console", ADMIN_APP),
+        Mount(
+            "/console",
+            ADMIN_APP,
+        ),
     ],
     lifespan=lifespan,
 )
@@ -55,6 +58,5 @@ add_pagination(app)
 @app.get("/static/{file_key:path}", include_in_schema=False)
 async def media(file_key: str):
     """Media now lives in S3 (rustfs); redirect to a signed, expiring URL."""
-    # Signing is local: unknown keys simply 404 at the object store.
     url = await PRODUCT_IMAGE_STORAGE.generate_file_url(file_key, root_url="")
     return RedirectResponse(url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)

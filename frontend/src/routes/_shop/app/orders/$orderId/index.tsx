@@ -86,9 +86,7 @@ function OrderDetailPage() {
 							x{i.quantity}
 						</span>
 						<span className="w-24 text-right font-medium tabular-nums">
-							{formatPrice(
-								Number.parseFloat(i.price_at_purchase) * i.quantity,
-							)}
+							{formatPrice(Number.parseFloat(i.price_at_purchase) * i.quantity)}
 						</span>
 					</li>
 				))}
