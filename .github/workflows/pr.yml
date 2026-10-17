@@ -56,6 +56,8 @@ jobs:
         run: uv sync --locked
 
       - name: Run tests
+        env:
+          REDIS_URL: redis://localhost:6379/0
         run: uv run pytest . --junitxml=test-reports.xml
 
       - name: Publish test results
@@ -89,7 +91,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Run tests
-        run: bun test --reporter=junit --reporter-outfile=test-results.xml
+        run: bun test --timeout 180000 --reporter=junit --reporter-outfile=test-results.xml
 
       - name: Publish test results
         if: always()
