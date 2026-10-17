@@ -7,11 +7,6 @@
     "ghcr.io/jsburckhardt/devcontainer-features/uv:1": {},
     "ghcr.io/jsburckhardt/devcontainer-features/ruff:1": {},
     "ghcr.io/devcontainers/features/git:1": {},
-    "ghcr.io/nils-geistmann/devcontainers-features/zsh:0": {
-      "setLocale": true,
-      "theme": "robbyrussell",
-      "plugins": "git docker",
-      "desiredLocale": "en_US.UTF-8 UTF-8"
-    }
+    "ghcr.io/nils-geistmann/devcontainers-features/zsh:0": {}
   }
 }

@@ -9,6 +9,34 @@ bun install
 bun --bun run dev
 ```
 
+## Tests
+
+From `frontend/`, install dependencies with `bun install --frozen-lockfile`.
+
+```bash
+bun run test              # unit tests, no Docker required
+bun run test:integration  # Testcontainers integration tests
+```
+
+Integration tests require Node.js 22.22+ and a running Docker engine with Linux
+containers. They run under Node with the existing `node:test` conventions and
+`tsx`; Bun remains the package manager and unit test runner.
+
+Testcontainers creates Postgres (`postgres:18-alpine`) and an HTTP upstream
+(`nginx:alpine`) on random ports. The first run downloads these images. Tests
+override inherited database settings, apply the checked-in Prisma migrations,
+clear the disposable database between cases, and stop containers after the run.
+They never use the development database or require a running frontend/backend.
+
+Coverage includes real Better Auth/Prisma signup, signin, session revocation,
+admin endpoint access checks for anonymous users and customers, customer
+ban/unban, JWT verification against JWKS, and media streaming, redirects,
+validation, error responses, headers and cancellation.
+
+These are server integration tests. Browser interactions, TanStack route guards
+and server function wrappers, passkeys, and frontend-to-FastAPI cart/checkout
+flows still need separate coverage.
+
 # Building For Production
 
 To build this application for production:

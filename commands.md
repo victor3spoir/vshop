@@ -13,31 +13,29 @@ REVISION="${REVISION:-}"
 ## Frontend
 
 ```sh
-
-docker buildx build \
+docker build \
   --file ./frontend/Dockerfile \
   --tag "${REGISTRY}/${IMAGE_NAMESPACE}/${PROJECT}-frontend:${TAG}" \
   --label "org.opencontainers.image.source=https://github.com/victor3spoir/vshop" \
   --label "org.opencontainers.image.version=${TAG}" \
   --label "org.opencontainers.image.revision=${REVISION}" \
   --label "org.opencontainers.image.title=vshop-frontend" \
-  --push \
   ./frontend
 
+docker push "${REGISTRY}/${IMAGE_NAMESPACE}/${PROJECT}-frontend:${TAG}"
 ```
 
 ## Backend
 
 ```sh
-
-docker buildx build \
+docker build \
   --file ./backend/Dockerfile \
   --tag "${REGISTRY}/${IMAGE_NAMESPACE}/${PROJECT}-backend:${TAG}" \
   --label "org.opencontainers.image.source=https://github.com/victor3spoir/vshop" \
   --label "org.opencontainers.image.version=${TAG}" \
   --label "org.opencontainers.image.revision=${REVISION}" \
   --label "org.opencontainers.image.title=vshop-backend" \
-  --push \
   ./backend
 
+docker push "${REGISTRY}/${IMAGE_NAMESPACE}/${PROJECT}-backend:${TAG}"
 ```
