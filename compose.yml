@@ -82,7 +82,7 @@ services:
     environment:
       DB_HOST: db
       DB_PORT: 5432
-      REDIS_URL: redis://:password@redis:6379/0
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
       S3_ENDPOINT_URL: http://rustfs:9000
 
   migrate-frontend:
@@ -104,7 +104,7 @@ services:
     environment:
       DATABASE_URL: "postgresql://postgres:postgres@db:5432/postgres?schema=frontend"
       BETTER_AUTH_URL: http://localhost:40000
-      BETTER_AUTH_SECRET: f5143ad71fa26bf3570110316799459bf88bcf133b431c80
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       SERVER_API_URL: http://backend:8000/api
 
 volumes:
