@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- vshop refined logo: storefront awning over a bold V that doubles as a shopping-bag body -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3b82f6"/>
+      <stop offset="1" stop-color="#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#tile)"/>
+  <!-- awning: top bar + 4 even scallops, spanning the full mark width -->
+  <rect x="116" y="128" width="280" height="26" rx="13" fill="#ffffff"/>
+  <path d="M124 154 h264 v24
+           a33 33 0 0 1 -66 0
+           a33 33 0 0 1 -66 0
+           a33 33 0 0 1 -66 0
+           a33 33 0 0 1 -66 0
+           z"
+        fill="#ffffff" opacity="0.92"/>
+  <!-- bold V centered under the awning -->
+  <path d="M160 258 L256 420 L352 258"
+        fill="none" stroke="#ffffff" stroke-width="58"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

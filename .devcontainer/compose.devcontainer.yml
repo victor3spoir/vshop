@@ -1,0 +1,94 @@
+
+services:
+
+  db:
+    image: postgres:18-alpine
+    expose:
+      - 5432
+    # ports:
+    #   - 35432:5432
+    environment:
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - vshop-db-vol:/var/lib/postgres
+
+  rustfs:
+    image: rustfs/rustfs:latest
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    expose:
+      - 9000 #api
+      - 9001 #console
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >
+          curl --fail --silent http://127.0.0.1:9000/health/ready && curl --fail --silent http://127.0.0.1:9001/rustfs/console/health
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+    security_opt:
+      - no-new-privileges:true
+    # ports:
+    #   - 9000:9000
+    #   - 9001:9001
+    environment:
+      RUSTFS_OBS_LOGGER_LEVEL: warn
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_CONSOLE_ADDRESS: ":9001"
+      RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY:-password}
+      RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY:-password}
+      RUSTFS_REGION: us-east-1
+      RUSTFS_HEALTH_ENDPOINT_ENABLE: "true"
+    volumes:
+      - vshop-rustfs-vol:/data
+
+  redis:
+    image: redis:8-alpine
+    command:
+      - sh
+      - -c
+      - exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD"
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - redis-cli --no-auth-warning -a "$$REDIS_PASSWORD" ping | grep PONG
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    # ports:
+    #   - 36379:6379
+    volumes:
+      - vshop-redis-vol:/data
+
+  backend-dev:
+    image: mcr.microsoft.com/devcontainers/python:3.12
+    command: sleep infinity
+    volumes:
+      - ../backend:/workspaces/backend:cached
+ 
+  frontend-dev:
+    image: mcr.microsoft.com/devcontainers/typescript-node:22
+    command: sleep infinity
+    volumes:
+      - ../backend:/workspaces/backend:cached
+
+
+volumes:
+  vshop-db-vol:
+    name: vshop-db-vol
+  vshop-rustfs-vol:
+    name: vshop-rustfs-vol
+  vshop-redis-vol:
+    name: vshop-redis-vol

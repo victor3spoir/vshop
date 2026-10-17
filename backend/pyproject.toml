@@ -1,0 +1,61 @@
+[project]
+name = "vshop"
+version = "0.1.0"
+description = "Simple e-commerce REST API built with FastAPI and Piccolo ORM"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.14"
+dependencies = [
+    "boto3>=1.43.89",
+    "fastapi-pagination>=0.15.16",
+    "fastapi-redis-sdk>=0.8.0",
+    "fastapi[standard]>=0.141.1",
+    "httpx>=0.28",
+    "piccolo-admin>=1.14.0",
+    "piccolo[all]>=1.36.0",
+    "pydantic-settings>=2.15.0",
+    "pyjwt[crypto]>=2.10",
+    "pytest-cov>=7.1.0",
+]
+
+[project.scripts]
+seed = "scripts.seed:cli"
+
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+py-modules = ["app", "pagination", "piccolo_conf", "redis_support", "settings"]
+include-package-data = false
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = false
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.16.6",
+    "testcontainers[postgres,redis]>=4.15.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+asyncio_mode = "auto"
+markers = [
+    "integration: tests that require Docker (testcontainers)",
+]
+
+[tool.ruff]
+exclude = [
+    ".venv",
+    "__pycache__",
+    "migrations",
+    "generated",
+    "docs",
+]

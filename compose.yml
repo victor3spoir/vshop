@@ -2,6 +2,8 @@ name: vshop
 services:
   db:
     image: postgres:18-alpine
+    expose:
+      - 5432
     ports:
       - 35432:5432
     environment:
@@ -9,6 +11,106 @@ services:
     volumes:
       - vshop-db-vol:/var/lib/postgres
 
+  rustfs:
+    image: rustfs/rustfs:latest
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    expose:
+      - 9000 #api
+      - 9001 #console
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >
+          curl --fail --silent http://127.0.0.1:9000/health/ready && curl --fail --silent http://127.0.0.1:9001/rustfs/console/health
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - 9000:9000
+      - 9001:9001
+    environment:
+      RUSTFS_OBS_LOGGER_LEVEL: warn
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_CONSOLE_ADDRESS: ":9001"
+      RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY}
+      RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY}
+      RUSTFS_REGION: us-east-1
+      RUSTFS_HEALTH_ENDPOINT_ENABLE: "true"
+    volumes:
+      - vshop-rustfs-vol:/data
+
+  redis:
+    image: redis:8-alpine
+    command:
+      - sh
+      - -c
+      - exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD"
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - redis-cli --no-auth-warning -a "$$REDIS_PASSWORD" ping | grep PONG
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - 36379:6379
+    volumes:
+      - vshop-redis-vol:/data
+
+
+  backend:
+    image: ghcr.io/victor3spoir/vshop-backend:dev
+    profiles: ["app"]
+    env_file:
+      - ./backend/src/.env
+    ports:
+      - 38000:8000
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      S3_ENDPOINT_URL: http://rustfs:9000
+
+  migrate-frontend:
+    image: ghcr.io/victor3spoir/vshop-frontend:dev
+    profiles: ["app"]
+    command: [ "x", "prisma", "migrate", "deploy" ]
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@db:5432/postgres?schema=frontend"
+      SERVER_API_URL: http://backend:8000/api
+
+  frontend:
+    depends_on:
+      migrate-frontend:
+        condition: service_completed_successfully
+    image: ghcr.io/victor3spoir/vshop-frontend:dev
+    profiles: ["app"]
+    ports:
+      - 40000:3000
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@db:5432/postgres?schema=frontend"
+      BETTER_AUTH_URL: http://localhost:40000
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      SERVER_API_URL: http://backend:8000/api
+
 volumes:
   vshop-db-vol:
     name: vshop-db-vol
+  vshop-rustfs-vol:
+    name: vshop-rustfs-vol
+  vshop-redis-vol:
+    name: vshop-redis-vol

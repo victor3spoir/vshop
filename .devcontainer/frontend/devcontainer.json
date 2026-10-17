@@ -1,0 +1,11 @@
+{
+  "name": "frontend",
+  "dockerComposeFile": "../compose.devcontainer.yml",
+  "service": "frontend-dev",
+  "workspaceFolder": "/workspaces/frontend",
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers-extra/features/zsh-plugins:0": {},
+    "ghcr.io/devcontainers-extra/features/bun:1.1.0": {}
+  }
+}
