@@ -27,10 +27,10 @@ APP_REGISTRY = AppRegistry(apps=["home.piccolo_app", "piccolo_admin.piccolo_app"
 
 ```sh
 # 1. Automatically generate the migration scripts based on tables.py
-piccolo migrations new vshop --auto
+uv run piccolo migrations new vshop --auto
 
 # 2. Run the migration to actually create the tables in your database
-piccolo migrations forwards vshop all
+uv run piccolo migrations forwards vshop all
 
 ```
 

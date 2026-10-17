@@ -115,11 +115,13 @@ async def client(clean_db, test_engine, redis_url, monkeypatch):
         **_TEST_USER, role="admin"
     )
 
-    async with app_module.app.router.lifespan_context(app_module.app):
-        async with AsyncClient(
+    async with (
+        app_module.app.router.lifespan_context(app_module.app),
+        AsyncClient(
             transport=ASGITransport(app=app_module.app), base_url="http://testserver"
-        ) as http_client:
-            yield http_client
+        ) as http_client,
+    ):
+        yield http_client
 
     app_module.app.dependency_overrides.clear()
 

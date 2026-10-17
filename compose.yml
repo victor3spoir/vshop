@@ -71,6 +71,7 @@ services:
     volumes:
       - vshop-redis-vol:/data
 
+
   backend:
     image: ghcr.io/victor3spoir/vshop-backend:dev
     profiles: ["app"]

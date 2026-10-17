@@ -81,9 +81,9 @@ uv run piccolo migrations forwards all
 ### 5. Seed sample data (optional)
 
 ```bash
-uv run python -m scripts.seed                 # complete DummyJSON catalog
-uv run python -m scripts.seed --products 50   # import the first 50 products
-uv run python -m scripts.seed --fresh         # wipe data, then import all
+uv run seed                 # complete DummyJSON catalog
+uv run --products 50   # import the first 50 products
+uv run --fresh         # wipe data, then import all
 ```
 
 The seeder maps DummyJSON into vshop's existing category, product, price, and
